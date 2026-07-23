@@ -21,5 +21,8 @@ final class Plugin {
 	}
 
 	public function boot(): void {
+		require_once EASY2FA_DIR . 'includes/class-crypto.php';
+		require_once EASY2FA_DIR . 'includes/class-store.php';
+		require_once EASY2FA_DIR . 'includes/class-schema.php';
 	}
 }

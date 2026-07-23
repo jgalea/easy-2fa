@@ -25,4 +25,12 @@ define( 'EASY2FA_PRO', file_exists( __DIR__ . '/pro/loader.php' ) );
 
 require_once EASY2FA_DIR . 'includes/class-plugin.php';
 
+register_activation_hook(
+	__FILE__,
+	static function (): void {
+		require_once EASY2FA_DIR . 'includes/class-schema.php';
+		Easy2FA\Schema::install();
+	}
+);
+
 Easy2FA\Plugin::instance()->boot();
