@@ -24,5 +24,9 @@ final class Plugin {
 		require_once EASY2FA_DIR . 'includes/class-crypto.php';
 		require_once EASY2FA_DIR . 'includes/class-store.php';
 		require_once EASY2FA_DIR . 'includes/class-schema.php';
+		require_once EASY2FA_DIR . 'includes/interface-provider.php';
+		require_once EASY2FA_DIR . 'includes/class-providers.php';
+
+		Providers::instance();
 	}
 }
