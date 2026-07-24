@@ -16,6 +16,9 @@ final class TOTP implements Provider {
 	private const DIGITS       = 6;
 	private const WINDOW       = 1;
 	private const SECRET_BYTES = 20;
+	// RFC 4226 floor. Anything shorter is rejected at enrolment and at validation,
+	// so a degenerate secret can never decode to a key that matches a fixed code.
+	private const MIN_SECRET_BYTES = 16;
 
 	public function id(): string {
 		return 'totp';
@@ -77,7 +80,7 @@ final class TOTP implements Provider {
 		$secret = strtoupper( preg_replace( '/\s+/', '', sanitize_text_field( $secret ) ) ?? '' );
 		$code   = preg_replace( '/\s+/', '', sanitize_text_field( $code ) ) ?? '';
 
-		if ( '' === $secret || ! preg_match( '/^[A-Z2-7]+$/', $secret ) ) {
+		if ( ! preg_match( '/^[A-Z2-7]+$/', $secret ) || strlen( self::base32_decode( $secret ) ) < self::MIN_SECRET_BYTES ) {
 			return new \WP_Error(
 				'easy2fa_invalid_secret',
 				__( 'Invalid authenticator secret.', 'easy-2fa' )
@@ -195,6 +198,10 @@ final class TOTP implements Provider {
 	}
 
 	private function code_valid_for_secret( string $secret, string $code, int $timestamp ): bool {
+		if ( strlen( self::base32_decode( $secret ) ) < self::MIN_SECRET_BYTES ) {
+			return false;
+		}
+
 		$step_now = (int) floor( $timestamp / self::STEP_SECONDS );
 		for ( $delta = -self::WINDOW; $delta <= self::WINDOW; $delta++ ) {
 			$expected = self::hotp( $secret, $step_now + $delta );
@@ -207,8 +214,9 @@ final class TOTP implements Provider {
 
 	private static function hotp( string $base32_secret, int $counter ): string {
 		$key = self::base32_decode( $base32_secret );
-		if ( '' === $key ) {
-			return str_repeat( '0', self::DIGITS );
+		if ( strlen( $key ) < self::MIN_SECRET_BYTES ) {
+			// A degenerate secret must never produce a code any input can match.
+			return '';
 		}
 
 		$bin_counter = pack( 'N*', 0, $counter & 0xFFFFFFFF );

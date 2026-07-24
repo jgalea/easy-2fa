@@ -144,9 +144,10 @@ final class Email implements Provider {
 		set_transient( self::TRANSIENT_KEY . $user_id, $this->hash_code( $code ), self::CODE_TTL );
 		set_transient( self::COOLDOWN_KEY . $user_id, 1, self::RESEND_COOLDOWN );
 
-		// Test-only plaintext mirror. WP_DEBUG on production debug installs, or WP unit tests
-		// (wp-env's wp-tests-config.php sets WP_DEBUG false; WP_TESTS_DOMAIN is test-suite-only).
-		if ( ( defined( 'WP_DEBUG' ) && WP_DEBUG ) || defined( 'WP_TESTS_DOMAIN' ) ) {
+		// Test-suite-only plaintext mirror. WP_TESTS_DOMAIN is defined by the WordPress
+		// test bootstrap and by nothing else. WP_DEBUG deliberately does NOT gate this:
+		// plenty of production sites run with it on, and this would persist a live OTP.
+		if ( defined( 'WP_TESTS_DOMAIN' ) ) {
 			update_user_meta( $user_id, self::DEBUG_META, $code );
 		}
 

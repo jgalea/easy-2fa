@@ -35,4 +35,12 @@ class Test_TOTP extends WP_UnitTestCase {
 		$totp->handle_enrol( $uid, [ 'secret' => self::SECRET, 'code' => $totp::code_at( self::SECRET, time() ) ] );
 		$this->assertFalse( $totp->validate( $uid, [ 'code' => '000000' ] ) );
 	}
+
+	public function test_degenerate_secret_cannot_validate(): void {
+		$uid  = self::factory()->user->create();
+		$totp = new \Easy2FA\Providers\TOTP();
+		$this->assertWPError( $totp->handle_enrol( $uid, [ 'secret' => 'A', 'code' => '000000' ] ) );
+		\Easy2FA\Store::set_method( $uid, 'totp', [ 'secret' => \Easy2FA\Crypto::encrypt( 'A' ) ] );
+		$this->assertFalse( $totp->validate( $uid, [ 'code' => '000000' ] ) );
+	}
 }
