@@ -28,5 +28,10 @@ final class Plugin {
 		require_once EASY2FA_DIR . 'includes/class-providers.php';
 
 		Providers::instance();
+
+		require_once EASY2FA_DIR . 'includes/class-recovery.php';
+		require_once EASY2FA_DIR . 'includes/class-cli.php';
+		Recovery::instance();
+		CLI::instance();
 	}
 }
