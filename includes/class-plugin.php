@@ -46,5 +46,8 @@ final class Plugin {
 		Settings::instance();
 		Users_Column::instance();
 		App_Passwords::instance();
+
+		require_once EASY2FA_DIR . 'includes/class-enrolment.php';
+		Enrolment::instance();
 	}
 }
