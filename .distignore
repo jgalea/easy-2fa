@@ -9,6 +9,7 @@
 /playwright-report
 /.git
 /.github
+/.wordpress-org
 /.claude
 .gitignore
 .distignore

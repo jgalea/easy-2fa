@@ -31,6 +31,7 @@ rsync -a \
     --exclude='.git/' \
     --exclude='.gitignore' \
     --exclude='.github/' \
+    --exclude='.wordpress-org/' \
     --exclude='.distignore' \
     --exclude='.claude/' \
     --exclude='.wp-env.json' \
