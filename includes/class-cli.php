@@ -1,0 +1,201 @@
+<?php
+
+declare( strict_types=1 );
+
+namespace Easy2FA;
+
+defined( 'ABSPATH' ) || exit;
+
+/**
+ * WP-CLI commands under `wp 2fa`.
+ *
+ * Registered only when WP-CLI is present. reset skips capability checks because
+ * shell access already implies full control of the site.
+ */
+final class CLI {
+
+	private static ?CLI $instance = null;
+
+	public static function instance(): CLI {
+		if ( null === self::$instance ) {
+			self::$instance = new self();
+			if ( defined( 'WP_CLI' ) && WP_CLI ) {
+				// Pass the instance: WP-CLI cannot construct a private-constructor class.
+				\WP_CLI::add_command( '2fa', self::$instance );
+			}
+		}
+		return self::$instance;
+	}
+
+	private function __construct() {
+	}
+
+	/**
+	 * Reset a user's two-factor authentication methods.
+	 *
+	 * ## OPTIONS
+	 *
+	 * <user>
+	 * : User ID, login, or email.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp 2fa reset 12
+	 *     wp 2fa reset admin
+	 *
+	 * @param list<string>             $args
+	 * @param array<string, string|bool> $assoc_args
+	 */
+	public function reset( array $args, array $assoc_args = [] ): void {
+		$user = $this->resolve_user( $args[0] ?? '' );
+		if ( null === $user ) {
+			\WP_CLI::error( 'User not found.' );
+		}
+
+		$result = Recovery::reset_user( (int) $user->ID, 0 );
+		if ( is_wp_error( $result ) ) {
+			\WP_CLI::error( $result->get_error_message() );
+		}
+
+		\WP_CLI::success(
+			sprintf(
+				'Two-factor authentication reset for user %s (ID %d).',
+				$user->user_login,
+				(int) $user->ID
+			)
+		);
+	}
+
+	/**
+	 * Show 2FA enrolment status for one user, or list all users when omitted.
+	 *
+	 * ## OPTIONS
+	 *
+	 * [<user>]
+	 * : Optional user ID, login, or email.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp 2fa status
+	 *     wp 2fa status admin
+	 *
+	 * @param list<string>               $args
+	 * @param array<string, string|bool> $assoc_args
+	 */
+	public function status( array $args, array $assoc_args = [] ): void {
+		if ( empty( $args[0] ) ) {
+			$this->list( [], $assoc_args );
+			return;
+		}
+
+		$user = $this->resolve_user( $args[0] );
+		if ( null === $user ) {
+			\WP_CLI::error( 'User not found.' );
+		}
+
+		$methods = $this->method_labels( (int) $user->ID );
+		\WP_CLI::log(
+			sprintf(
+				'User: %s (ID %d)',
+				$user->user_login,
+				(int) $user->ID
+			)
+		);
+		\WP_CLI::log(
+			'Methods: ' . ( [] === $methods ? '(none)' : implode( ', ', $methods ) )
+		);
+	}
+
+	/**
+	 * List users and their enrolled 2FA methods.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp 2fa list
+	 *
+	 * @param list<string>               $args
+	 * @param array<string, string|bool> $assoc_args
+	 */
+	public function list( array $args = [], array $assoc_args = [] ): void {
+		$users = get_users(
+			[
+				'fields'  => [ 'ID', 'user_login', 'user_email' ],
+				'orderby' => 'ID',
+				'order'   => 'ASC',
+			]
+		);
+
+		$items = [];
+		foreach ( $users as $user ) {
+			$methods = $this->method_labels( (int) $user->ID );
+			$items[] = [
+				'ID'      => (int) $user->ID,
+				'login'   => $user->user_login,
+				'email'   => $user->user_email,
+				'methods' => [] === $methods ? '(none)' : implode( ', ', $methods ),
+			];
+		}
+
+		if ( [] === $items ) {
+			\WP_CLI::log( 'No users found.' );
+			return;
+		}
+
+		\WP_CLI\Utils\format_items( 'table', $items, [ 'ID', 'login', 'email', 'methods' ] );
+	}
+
+	/**
+	 * @return list<string>
+	 */
+	private function method_labels( int $user_id ): array {
+		$labels = [];
+
+		foreach ( Providers::instance()->all() as $provider ) {
+			if ( $provider->is_enrolled( $user_id ) ) {
+				$labels[] = $provider->id();
+			}
+		}
+
+		// Store methods that may not map to an available provider on this runtime.
+		foreach ( array_keys( Store::methods( $user_id ) ) as $id ) {
+			if ( ! in_array( $id, $labels, true ) ) {
+				$labels[] = $id;
+			}
+		}
+
+		require_once EASY2FA_DIR . 'includes/class-credentials.php';
+		if ( [] !== Credentials::for_user( $user_id ) && ! in_array( 'passkey', $labels, true ) ) {
+			$labels[] = 'passkey';
+		}
+
+		sort( $labels );
+
+		return $labels;
+	}
+
+	private function resolve_user( string $ref ): ?\WP_User {
+		$ref = trim( $ref );
+		if ( '' === $ref ) {
+			return null;
+		}
+
+		if ( ctype_digit( $ref ) ) {
+			$user = get_userdata( (int) $ref );
+			if ( $user instanceof \WP_User ) {
+				return $user;
+			}
+		}
+
+		$user = get_user_by( 'login', $ref );
+		if ( $user instanceof \WP_User ) {
+			return $user;
+		}
+
+		$user = get_user_by( 'email', $ref );
+		if ( $user instanceof \WP_User ) {
+			return $user;
+		}
+
+		return null;
+	}
+}

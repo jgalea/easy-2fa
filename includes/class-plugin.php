@@ -33,5 +33,10 @@ final class Plugin {
 		require_once EASY2FA_DIR . 'includes/class-rate-limit.php';
 		require_once EASY2FA_DIR . 'includes/class-challenge.php';
 		Challenge::instance();
+
+		require_once EASY2FA_DIR . 'includes/class-recovery.php';
+		require_once EASY2FA_DIR . 'includes/class-cli.php';
+		Recovery::instance();
+		CLI::instance();
 	}
 }
