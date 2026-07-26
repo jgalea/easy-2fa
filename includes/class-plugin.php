@@ -38,5 +38,13 @@ final class Plugin {
 		require_once EASY2FA_DIR . 'includes/class-cli.php';
 		Recovery::instance();
 		CLI::instance();
+
+		require_once EASY2FA_DIR . 'includes/class-settings.php';
+		require_once EASY2FA_DIR . 'includes/class-users-column.php';
+		require_once EASY2FA_DIR . 'includes/class-app-passwords.php';
+
+		Settings::instance();
+		Users_Column::instance();
+		App_Passwords::instance();
 	}
 }
