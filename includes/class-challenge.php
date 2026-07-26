@@ -115,6 +115,13 @@ final class Challenge {
 			return;
 		}
 
+		// Extension point for a trusted-device add-on. Defaults to false, so the
+		// second factor is only ever skipped by code that deliberately opts in
+		// (the Pro trusted-devices feature, which requires a valid signed token).
+		if ( true === apply_filters( 'easy2fa_skip_challenge', false, $user ) ) {
+			return;
+		}
+
 		$remember    = ! empty( $_POST['rememberme'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$redirect_to = self::sanitize_redirect(
 			isset( $_REQUEST['redirect_to'] ) ? wp_unslash( (string) $_REQUEST['redirect_to'] ) : '' // phpcs:ignore WordPress.Security.NonceVerification.Recommended

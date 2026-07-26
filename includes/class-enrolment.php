@@ -147,6 +147,15 @@ final class Enrolment {
 			$this->ensure_backup_codes( $user_id );
 		}
 
+		/**
+		 * Fires when a user's enrolled factors change. Add-ons that cache a
+		 * trust decision (e.g. trusted devices) revoke it here, so a device
+		 * trusted under old factors cannot survive a credential change.
+		 *
+		 * @param int $user_id
+		 */
+		do_action( 'easy2fa_methods_changed', $user_id );
+
 		return true;
 	}
 
@@ -193,6 +202,8 @@ final class Enrolment {
 		} else {
 			Store::remove_method( $user_id, $provider_id );
 		}
+
+		do_action( 'easy2fa_methods_changed', $user_id );
 
 		return true;
 	}

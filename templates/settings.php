@@ -131,4 +131,12 @@ $updated = ! empty( $updated );
 
 		<?php submit_button( __( 'Save settings', 'easy-2fa' ) ); ?>
 	</form>
+
+	<?php
+	/**
+	 * Fires at the end of the Easy 2FA settings screen. Extension point for
+	 * add-ons (Pro license entry, trusted-device controls).
+	 */
+	do_action( 'easy2fa_settings_after' );
+	?>
 </div>

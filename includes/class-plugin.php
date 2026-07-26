@@ -53,5 +53,11 @@ final class Plugin {
 
 		require_once EASY2FA_DIR . 'includes/class-enforcement.php';
 		Enforcement::instance();
+
+		// Pro add-on, when present. The free build strips pro/ entirely, so this
+		// include only fires in the Pro distribution.
+		if ( EASY2FA_PRO ) {
+			require_once EASY2FA_DIR . 'pro/loader.php';
+		}
 	}
 }

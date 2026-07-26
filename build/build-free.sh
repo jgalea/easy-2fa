@@ -19,6 +19,7 @@ rm -rf "$DIST/easy-2fa" "$DIST/easy-2fa.zip"
 mkdir -p "$DIST/easy-2fa"
 
 rsync -a \
+    --exclude='pro/' \
     --exclude='build/' \
     --exclude='dist/' \
     --exclude='docs/' \

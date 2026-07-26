@@ -55,6 +55,16 @@ $action_url = site_url( 'wp-login.php?action=easy2fa', 'login_post' );
 			<?php $challenge_active->render_challenge( (int) $challenge_user->ID ); ?>
 		</div>
 
+		<?php
+		/**
+		 * Fires inside the challenge form, below the code field. Extension point
+		 * for a trusted-device add-on to render its "trust this device" control.
+		 *
+		 * @param \WP_User $challenge_user The user completing the challenge.
+		 */
+		do_action( 'easy2fa_challenge_form', $challenge_user );
+		?>
+
 		<p class="submit">
 			<button type="submit" name="easy2fa_authenticate" id="easy2fa-authenticate" class="button button-primary button-large" value="1">
 				<?php echo esc_html__( 'Verify', 'easy-2fa' ); ?>

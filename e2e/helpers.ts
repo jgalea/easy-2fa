@@ -43,3 +43,13 @@ export async function logout(page: Page) {
 	// depends on the bar rendering and hover state, which is flaky under test.
 	await page.context().clearCookies();
 }
+
+// Logout that mimics real WordPress: clears only the WP auth cookies and leaves
+// the trusted-device cookie in place, the way a browser would after logging out.
+export async function logoutKeepingTrust(page: Page) {
+	const ctx = page.context();
+	const cookies = await ctx.cookies();
+	await ctx.clearCookies();
+	const keep = cookies.filter((c) => !c.name.startsWith('wordpress'));
+	if (keep.length) await ctx.addCookies(keep);
+}
