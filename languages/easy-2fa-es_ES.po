@@ -1,0 +1,572 @@
+# Copyright (C) 2026 RebelCode
+# This file is distributed under the GPL-3.0-or-later.
+msgid ""
+msgstr ""
+"Project-Id-Version: Easy 2FA 0.1.0"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/easy-2fa\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-07-26T15:47:08+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.12.0\n"
+"X-Domain: easy-2fa\n"
+
+#. Plugin Name of the plugin
+#: easy-2fa.php
+#: includes/class-settings.php:27
+#: includes/class-settings.php:28
+#: templates/settings.php:23
+msgid "Easy 2FA"
+msgstr "Easy 2FA"
+
+#. Description of the plugin
+#: easy-2fa.php
+msgid "Two-factor authentication that should have been standard. Passkeys, authenticator apps, backup codes and email codes, with per-role enforcement and recovery that actually works."
+msgstr "La autenticación en dos pasos que debería haber sido estándar. Claves de acceso, aplicaciones de autenticación, códigos de respaldo y códigos por correo, con obligatoriedad por perfil y una recuperación que de verdad funciona."
+
+#. Author of the plugin
+#: easy-2fa.php
+msgid "RebelCode"
+msgstr "RebelCode"
+
+#. Author URI of the plugin
+#: easy-2fa.php
+msgid "https://rebelcode.com"
+msgstr "https://rebelcode.com"
+
+#: includes/class-challenge.php:62
+msgid "This verification session has expired. Please log in again."
+msgstr "Esta sesión de verificación ha caducado. Vuelve a iniciar sesión."
+
+#: includes/class-challenge.php:72
+msgid "Too many failed attempts. Please wait before trying again."
+msgstr "Demasiados intentos fallidos. Espera un momento antes de volver a intentarlo."
+
+#: includes/class-challenge.php:81
+#: includes/class-challenge.php:87
+msgid "Verification failed."
+msgstr "La verificación ha fallado."
+
+#: includes/class-challenge.php:157
+msgid "Verification failed. Please try again."
+msgstr "La verificación ha fallado. Inténtalo de nuevo."
+
+#: includes/class-challenge.php:306
+#: templates/challenge.php:21
+msgid "Two-factor authentication"
+msgstr "Autenticación en dos pasos"
+
+#: includes/class-enforcement.php:88
+msgid "Two-factor authentication is required for your account. You have 1 day left to set it up."
+msgstr "Tu cuenta requiere autenticación en dos pasos. Te queda 1 día para configurarla."
+
+#. translators: %d: days remaining in the grace period
+#: includes/class-enforcement.php:92
+#, php-format
+msgid "Two-factor authentication is required for your account. You have %d days left to set it up."
+msgstr "Tu cuenta requiere autenticación en dos pasos. Te quedan %d días para configurarla."
+
+#: includes/class-enforcement.php:99
+msgid "Set up 2FA now"
+msgstr "Configurar la 2FA ahora"
+
+#: includes/class-enforcement.php:100
+msgid "Dismiss"
+msgstr "Descartar"
+
+#: includes/class-enforcement.php:106
+#: includes/providers/class-passkey.php:429
+msgid "You must be logged in."
+msgstr "Debes haber iniciado sesión."
+
+#: includes/class-enrolment.php:34
+#: includes/class-enrolment.php:98
+#: templates/enrol.php:30
+msgid "Two-Factor Authentication"
+msgstr "Autenticación en dos pasos"
+
+#: includes/class-enrolment.php:35
+msgid "Two-Factor Auth"
+msgstr "Autenticación 2FA"
+
+#: includes/class-enrolment.php:79
+#: includes/class-settings.php:37
+msgid "You do not have permission to access this page."
+msgstr "No tienes permiso para acceder a esta página."
+
+#: includes/class-enrolment.php:113
+#: includes/class-enrolment.php:160
+#: includes/class-enrolment.php:206
+#: includes/class-enrolment.php:238
+#: includes/class-enrolment.php:255
+msgid "You are not allowed to change two-factor methods for this user."
+msgstr "No tienes permiso para cambiar los métodos de autenticación en dos pasos de este usuario."
+
+#: includes/class-enrolment.php:121
+#: includes/class-enrolment.php:129
+#: includes/class-enrolment.php:168
+msgid "Unknown authentication method."
+msgstr "Método de autenticación desconocido."
+
+#: includes/class-enrolment.php:176
+msgid "That authentication method is not set up."
+msgstr "Ese método de autenticación no está configurado."
+
+#: includes/class-enrolment.php:186
+msgid "You cannot remove your last authentication method while two-factor authentication is required."
+msgstr "No puedes eliminar tu último método de autenticación mientras la autenticación en dos pasos sea obligatoria."
+
+#: includes/class-recovery.php:39
+#: includes/class-recovery.php:139
+#: includes/providers/class-passkey.php:405
+msgid "Invalid user."
+msgstr "Usuario no válido."
+
+#: includes/class-recovery.php:47
+#: includes/providers/class-passkey.php:299
+msgid "User not found."
+msgstr "Usuario no encontrado."
+
+#: includes/class-recovery.php:55
+#: includes/class-recovery.php:145
+msgid "You are not allowed to reset two-factor authentication for this user."
+msgstr "No tienes permiso para restablecer la autenticación en dos pasos de este usuario."
+
+#: includes/class-recovery.php:122
+msgid "Reset two-factor authentication for this user? Their enrolled methods will be removed and their sessions will end."
+msgstr "¿Restablecer la autenticación en dos pasos de este usuario? Se eliminarán sus métodos configurados y se cerrarán sus sesiones."
+
+#: includes/class-recovery.php:129
+msgid "Reset 2FA"
+msgstr "Restablecer la 2FA"
+
+#: includes/class-recovery.php:176
+msgid "Two-factor authentication was reset for that user."
+msgstr "Se ha restablecido la autenticación en dos pasos de ese usuario."
+
+#: includes/class-recovery.php:180
+msgid "Could not reset two-factor authentication for that user."
+msgstr "No se ha podido restablecer la autenticación en dos pasos de ese usuario."
+
+#: includes/class-recovery.php:193
+msgid "a site administrator"
+msgstr "un administrador del sitio"
+
+#: includes/class-recovery.php:200
+msgid "a site administrator (via command line)"
+msgstr "un administrador del sitio (mediante la línea de comandos)"
+
+#. translators: %s: site name
+#: includes/class-recovery.php:205
+#, php-format
+msgid "Your two-factor authentication was reset on %s"
+msgstr "Se ha restablecido tu autenticación en dos pasos en %s"
+
+#. translators: 1: site name, 2: actor description
+#: includes/class-recovery.php:211
+#, php-format
+msgid ""
+"Your two-factor authentication methods on %1$s were reset by %2$s.\n"
+"\n"
+"You can sign in with your password alone until you set up two-factor authentication again.\n"
+"\n"
+"If you did not expect this change, contact a site administrator immediately."
+msgstr ""
+"Tus métodos de autenticación en dos pasos en %1$s los ha restablecido %2$s.\n"
+"\n"
+"Puedes iniciar sesión solo con tu contraseña hasta que vuelvas a configurar la autenticación en dos pasos.\n"
+"\n"
+"Si no esperabas este cambio, ponte en contacto de inmediato con un administrador del sitio."
+
+#: includes/class-settings.php:53
+msgid "You do not have permission to save these settings."
+msgstr "No tienes permiso para guardar estos ajustes."
+
+#: includes/class-users-column.php:30
+msgid "2FA"
+msgstr "2FA"
+
+#: includes/class-users-column.php:56
+#: includes/class-users-column.php:61
+msgid "Not set up"
+msgstr "Sin configurar"
+
+#. translators: %s: local deadline date/time
+#: includes/class-users-column.php:72
+#, php-format
+msgid "Not set up (due %s)"
+msgstr "Sin configurar (fecha límite %s)"
+
+#: includes/providers/class-backup-codes.php:24
+msgid "Backup codes"
+msgstr "Códigos de respaldo"
+
+#: includes/providers/class-backup-codes.php:91
+msgid "Backup codes are already set. Generate new codes to replace them; the old ones will stop working."
+msgstr "Ya tienes códigos de respaldo. Genera códigos nuevos para reemplazarlos; los anteriores dejarán de funcionar."
+
+#. translators: %d: number of unused backup codes remaining
+#: includes/providers/class-backup-codes.php:95
+#, php-format
+msgid "%d backup code remaining."
+msgid_plural "%d backup codes remaining."
+msgstr[0] "Queda %d código de respaldo."
+msgstr[1] "Quedan %d códigos de respaldo."
+
+#: includes/providers/class-backup-codes.php:100
+msgid "Backup codes have not been generated yet."
+msgstr "Todavía no se han generado códigos de respaldo."
+
+#: includes/providers/class-backup-codes.php:110
+msgid "Save these backup codes now. They will not be shown again."
+msgstr "Guarda ahora estos códigos de respaldo. No se volverán a mostrar."
+
+#: includes/providers/class-backup-codes.php:111
+msgid "Each code can be used once if you lose access to your other authentication methods."
+msgstr "Cada código se puede usar una vez si pierdes el acceso a tus demás métodos de autenticación."
+
+#: includes/providers/class-backup-codes.php:121
+msgid "Download as text"
+msgstr "Descargar como texto"
+
+#: includes/providers/class-backup-codes.php:136
+msgid "Enter one of your backup codes."
+msgstr "Introduce uno de tus códigos de respaldo."
+
+#: includes/providers/class-backup-codes.php:137
+msgid "Backup code"
+msgstr "Código de respaldo"
+
+#: includes/providers/class-email.php:26
+#: includes/providers/class-email.php:83
+msgid "Email code"
+msgstr "Código por correo"
+
+#: includes/providers/class-email.php:45
+msgid "We will send a six-digit code to your account email when you sign in."
+msgstr "Enviaremos un código de seis dígitos al correo de tu cuenta cuando inicies sesión."
+
+#. translators: %s: user email address
+#: includes/providers/class-email.php:50
+#, php-format
+msgid "Codes go to: %s"
+msgstr "Los códigos se envían a: %s"
+
+#: includes/providers/class-email.php:66
+msgid "Your account needs a valid email address to use email codes."
+msgstr "Tu cuenta necesita una dirección de correo válida para usar los códigos por correo."
+
+#: includes/providers/class-email.php:82
+msgid "Enter the six-digit code we sent to your email."
+msgstr "Introduce el código de seis dígitos que enviamos a tu correo."
+
+#. translators: %s: site name
+#: includes/providers/class-email.php:161
+#, php-format
+msgid "Your login code for %s"
+msgstr "Tu código de inicio de sesión para %s"
+
+#. translators: 1: site name, 2: six-digit code
+#: includes/providers/class-email.php:167
+#, php-format
+msgid ""
+"Someone is trying to sign in to %1$s.\n"
+"\n"
+"Your one-time code is: %2$s\n"
+"\n"
+"This code expires in ten minutes and can only be used once.\n"
+"\n"
+"Nobody from %1$s will ever ask you for this code. If you did not try to sign in, you can ignore this email."
+msgstr ""
+"Alguien está intentando iniciar sesión en %1$s.\n"
+"\n"
+"Tu código de un solo uso es: %2$s\n"
+"\n"
+"Este código caduca en diez minutos y solo se puede usar una vez.\n"
+"\n"
+"Nadie de %1$s te pedirá nunca este código. Si no has intentado iniciar sesión, puedes ignorar este correo."
+
+#: includes/providers/class-passkey.php:50
+#: includes/providers/class-passkey.php:152
+msgid "Passkey"
+msgstr "Clave de acceso"
+
+#: includes/providers/class-passkey.php:78
+#: includes/providers/class-passkey.php:99
+#: includes/providers/class-passkey.php:173
+#: includes/providers/class-passkey.php:294
+#: includes/providers/class-passkey.php:366
+msgid "Passkeys are not available in this environment."
+msgstr "Las claves de acceso no están disponibles en este entorno."
+
+#: includes/providers/class-passkey.php:85
+msgid "Register a passkey for this account. You will be prompted by your browser or device."
+msgstr "Registra una clave de acceso para esta cuenta. Tu navegador o dispositivo te lo solicitará."
+
+#: includes/providers/class-passkey.php:86
+msgid "Device label"
+msgstr "Etiqueta del dispositivo"
+
+#: includes/providers/class-passkey.php:88
+msgid "Register passkey"
+msgstr "Registrar clave de acceso"
+
+#: includes/providers/class-passkey.php:103
+#: includes/providers/class-passkey.php:290
+#: includes/providers/class-passkey.php:334
+msgid "You are not allowed to enrol a passkey for this user."
+msgstr "No tienes permiso para registrar una clave de acceso para este usuario."
+
+#: includes/providers/class-passkey.php:113
+#: includes/providers/class-passkey.php:144
+msgid "Invalid passkey registration data."
+msgstr "Datos de registro de la clave de acceso no válidos."
+
+#: includes/providers/class-passkey.php:118
+msgid "Registration challenge expired. Please try again."
+msgstr "El desafío de registro ha caducado. Inténtalo de nuevo."
+
+#: includes/providers/class-passkey.php:134
+msgid "Passkey registration failed verification."
+msgstr "El registro de la clave de acceso no ha superado la verificación."
+
+#: includes/providers/class-passkey.php:148
+msgid "This passkey is already registered."
+msgstr "Esta clave de acceso ya está registrada."
+
+#: includes/providers/class-passkey.php:157
+msgid "Could not store the passkey."
+msgstr "No se ha podido guardar la clave de acceso."
+
+#: includes/providers/class-passkey.php:180
+msgid "Use your passkey to continue."
+msgstr "Usa tu clave de acceso para continuar."
+
+#: includes/providers/class-passkey.php:181
+msgid "Use passkey"
+msgstr "Usar clave de acceso"
+
+#: includes/providers/class-passkey.php:321
+msgid "Could not start passkey registration."
+msgstr "No se ha podido iniciar el registro de la clave de acceso."
+
+#: includes/providers/class-passkey.php:350
+#: includes/providers/class-passkey.php:467
+msgid "Passkey registered."
+msgstr "Clave de acceso registrada."
+
+#: includes/providers/class-passkey.php:361
+#: includes/providers/class-passkey.php:409
+msgid "You are not allowed to use this passkey challenge."
+msgstr "No tienes permiso para usar este desafío de clave de acceso."
+
+#: includes/providers/class-passkey.php:375
+msgid "No passkeys are registered for this account."
+msgstr "No hay claves de acceso registradas en esta cuenta."
+
+#: includes/providers/class-passkey.php:392
+msgid "Could not start passkey authentication."
+msgstr "No se ha podido iniciar la autenticación con clave de acceso."
+
+#: includes/providers/class-passkey.php:421
+msgid "Passkey authentication failed."
+msgstr "La autenticación con clave de acceso ha fallado."
+
+#: includes/providers/class-passkey.php:424
+msgid "Passkey verified."
+msgstr "Clave de acceso verificada."
+
+#: includes/providers/class-passkey.php:465
+msgid "Passkeys are not supported in this browser or context. Use HTTPS and a modern browser."
+msgstr "Este navegador o contexto no admite claves de acceso. Usa HTTPS y un navegador moderno."
+
+#: includes/providers/class-passkey.php:466
+msgid "Follow the browser prompt to register your passkey…"
+msgstr "Sigue las indicaciones del navegador para registrar tu clave de acceso…"
+
+#: includes/providers/class-passkey.php:468
+msgid "Follow the browser prompt to use your passkey…"
+msgstr "Sigue las indicaciones del navegador para usar tu clave de acceso…"
+
+#: includes/providers/class-passkey.php:469
+msgid "Something went wrong. Please try again."
+msgstr "Algo ha ido mal. Inténtalo de nuevo."
+
+#: includes/providers/class-totp.php:28
+msgid "Authenticator app"
+msgstr "Aplicación de autenticación"
+
+#: includes/providers/class-totp.php:61
+msgid "Secret key"
+msgstr "Clave secreta"
+
+#: includes/providers/class-totp.php:63
+msgid "Provisioning URI"
+msgstr "URI de aprovisionamiento"
+
+#: includes/providers/class-totp.php:67
+msgid "Verification code"
+msgstr "Código de verificación"
+
+#: includes/providers/class-totp.php:86
+msgid "Invalid authenticator secret."
+msgstr "Clave secreta de autenticación no válida."
+
+#: includes/providers/class-totp.php:93
+msgid "Enter the 6-digit code from your authenticator app."
+msgstr "Introduce el código de 6 dígitos de tu aplicación de autenticación."
+
+#: includes/providers/class-totp.php:100
+msgid "That code did not match. Check the time on your device and try again."
+msgstr "Ese código no coincide. Comprueba la hora de tu dispositivo e inténtalo de nuevo."
+
+#: includes/providers/class-totp.php:108
+msgid "Could not store the authenticator secret."
+msgstr "No se ha podido guardar la clave secreta de autenticación."
+
+#: includes/providers/class-totp.php:128
+msgid "Authenticator code"
+msgstr "Código de autenticación"
+
+#: templates/challenge.php:22
+msgid "Enter a verification code to finish signing in."
+msgstr "Introduce un código de verificación para terminar de iniciar sesión."
+
+#: templates/challenge.php:25
+#: templates/enrol.php:93
+msgid "Authentication methods"
+msgstr "Métodos de autenticación"
+
+#: templates/challenge.php:60
+msgid "Verify"
+msgstr "Verificar"
+
+#: templates/challenge.php:66
+msgid "Cancel and go back to login"
+msgstr "Cancelar y volver al inicio de sesión"
+
+#: templates/enrol.php:32
+msgid "Add a second step to your sign-in. Passkeys are the simplest option when your device supports them; an authenticator app works everywhere."
+msgstr "Añade un segundo paso a tu inicio de sesión. Las claves de acceso son la opción más sencilla cuando tu dispositivo las admite; una aplicación de autenticación funciona en todas partes."
+
+#: templates/enrol.php:41
+msgid "Method saved. Save your backup codes below — they will not be shown again."
+msgstr "Método guardado. Guarda tus códigos de respaldo de abajo: no se volverán a mostrar."
+
+#: templates/enrol.php:44
+msgid "Authentication method saved."
+msgstr "Método de autenticación guardado."
+
+#: templates/enrol.php:47
+msgid "Authentication method removed."
+msgstr "Método de autenticación eliminado."
+
+#: templates/enrol.php:50
+msgid "Saved."
+msgstr "Guardado."
+
+#: templates/enrol.php:60
+msgid "Could not update two-factor authentication."
+msgstr "No se ha podido actualizar la autenticación en dos pasos."
+
+#: templates/enrol.php:83
+msgid "Active methods:"
+msgstr "Métodos activos:"
+
+#: templates/enrol.php:89
+msgid "No authentication methods are set up yet."
+msgstr "Todavía no hay ningún método de autenticación configurado."
+
+#: templates/enrol.php:113
+msgid "On"
+msgstr "Activado"
+
+#: templates/enrol.php:147
+msgid "Generate new backup codes"
+msgstr "Generar códigos de respaldo nuevos"
+
+#: templates/enrol.php:151
+msgid "Generating new codes invalidates any codes you still have written down."
+msgstr "Generar códigos nuevos invalida los que aún tengas anotados."
+
+#: templates/enrol.php:162
+msgid "Generate backup codes"
+msgstr "Generar códigos de respaldo"
+
+#: templates/enrol.php:170
+msgid "This method is set up on your account."
+msgstr "Este método está configurado en tu cuenta."
+
+#: templates/enrol.php:179
+msgid "Remove this method"
+msgstr "Eliminar este método"
+
+#: templates/enrol.php:184
+msgid "You can register another passkey below."
+msgstr "Puedes registrar otra clave de acceso abajo."
+
+#. translators: %s: method label
+#: templates/enrol.php:207
+#, php-format
+msgid "Enable %s"
+msgstr "Activar %s"
+
+#: templates/settings.php:26
+msgid "Settings saved."
+msgstr "Ajustes guardados."
+
+#: templates/settings.php:31
+msgid "What 2FA protects"
+msgstr "Qué protege la 2FA"
+
+#: templates/settings.php:35
+msgid "Easy 2FA protects interactive logins (the normal WordPress login form and the challenge that follows). It does not apply to application passwords. REST API and XML-RPC requests authenticated with an application password bypass two-factor authentication entirely. If a role should not use that hole, disable application passwords for that role below."
+msgstr "Easy 2FA protege los inicios de sesión interactivos (el formulario de acceso normal de WordPress y el desafío posterior). No se aplica a las contraseñas de aplicación. Las peticiones a la API REST y a XML-RPC autenticadas con una contraseña de aplicación se saltan por completo la autenticación en dos pasos. Si un perfil no debe usar esa vía, desactiva más abajo las contraseñas de aplicación para ese perfil."
+
+#: templates/settings.php:49
+msgid "Enforcement"
+msgstr "Obligatoriedad"
+
+#: templates/settings.php:53
+msgid "Require two-factor authentication for selected roles"
+msgstr "Exigir autenticación en dos pasos a los perfiles seleccionados"
+
+#: templates/settings.php:59
+msgid "Roles that must enrol"
+msgstr "Perfiles obligados a configurarla"
+
+#: templates/settings.php:62
+#: templates/settings.php:109
+msgid "No roles found."
+msgstr "No se han encontrado perfiles."
+
+#: templates/settings.php:83
+msgid "Minimum capability"
+msgstr "Capacidad mínima"
+
+#: templates/settings.php:88
+msgid "Optional. Any user with this capability is covered regardless of role. Roles and capability are combined with OR."
+msgstr "Opcional. Cualquier usuario con esta capacidad queda cubierto independientemente de su perfil. Los perfiles y la capacidad se combinan con un OR."
+
+#: templates/settings.php:95
+msgid "Grace period (days)"
+msgstr "Período de gracia (días)"
+
+#: templates/settings.php:100
+msgid "Days after first coverage before enrolment is forced. Zero means enrol on next login."
+msgstr "Días desde la primera cobertura antes de forzar la configuración. Cero significa configurarla en el siguiente inicio de sesión."
+
+#: templates/settings.php:106
+msgid "Disable application passwords"
+msgstr "Desactivar las contraseñas de aplicación"
+
+#: templates/settings.php:125
+msgid "Blocks creating and using application passwords for the selected roles. Use this when interactive 2FA alone is not enough for that role."
+msgstr "Bloquea la creación y el uso de contraseñas de aplicación para los perfiles seleccionados. Úsalo cuando la 2FA interactiva por sí sola no baste para ese perfil."
+
+#: templates/settings.php:132
+msgid "Save settings"
+msgstr "Guardar ajustes"
