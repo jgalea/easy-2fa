@@ -1,0 +1,391 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Easy 2FA 0.1.0\n"
+"Language: de_DE\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Easy 2FA"
+msgstr "Easy 2FA"
+
+msgid "Two-factor authentication that should have been standard. Passkeys, authenticator apps, backup codes and email codes, with per-role enforcement and recovery that actually works."
+msgstr "Zwei-Faktor-Authentifizierung, die längst Standard sein sollte. Passkeys, Authenticator-Apps, Backup-Codes und E-Mail-Codes, mit erzwingbarer Einrichtung pro Rolle und einer Wiederherstellung, die wirklich funktioniert."
+
+msgid "RebelCode"
+msgstr "RebelCode"
+
+msgid "https://rebelcode.com"
+msgstr "https://rebelcode.com"
+
+msgid "This verification session has expired. Please log in again."
+msgstr "Diese Verifizierungssitzung ist abgelaufen. Bitte melde dich erneut an."
+
+msgid "Too many failed attempts. Please wait before trying again."
+msgstr "Zu viele fehlgeschlagene Versuche. Bitte warte, bevor du es erneut versuchst."
+
+msgid "Verification failed."
+msgstr "Verifizierung fehlgeschlagen."
+
+msgid "Verification failed. Please try again."
+msgstr "Verifizierung fehlgeschlagen. Bitte versuche es erneut."
+
+msgid "Two-factor authentication"
+msgstr "Zwei-Faktor-Authentifizierung"
+
+msgid "Two-factor authentication is required for your account. You have 1 day left to set it up."
+msgstr "Für dein Konto ist die Zwei-Faktor-Authentifizierung erforderlich. Du hast noch 1 Tag Zeit, sie einzurichten."
+
+msgid "Two-factor authentication is required for your account. You have %d days left to set it up."
+msgstr "Für dein Konto ist die Zwei-Faktor-Authentifizierung erforderlich. Du hast noch %d Tage Zeit, sie einzurichten."
+
+msgid "Set up 2FA now"
+msgstr "2FA jetzt einrichten"
+
+msgid "Dismiss"
+msgstr "Ausblenden"
+
+msgid "You must be logged in."
+msgstr "Du musst angemeldet sein."
+
+msgid "Two-Factor Authentication"
+msgstr "Zwei-Faktor-Authentifizierung"
+
+msgid "Two-Factor Auth"
+msgstr "Zwei-Faktor-Auth"
+
+msgid "You do not have permission to access this page."
+msgstr "Du hast keine Berechtigung, auf diese Seite zuzugreifen."
+
+msgid "You are not allowed to change two-factor methods for this user."
+msgstr "Du darfst die Zwei-Faktor-Methoden für diesen Benutzer nicht ändern."
+
+msgid "Unknown authentication method."
+msgstr "Unbekannte Authentifizierungsmethode."
+
+msgid "That authentication method is not set up."
+msgstr "Diese Authentifizierungsmethode ist nicht eingerichtet."
+
+msgid "You cannot remove your last authentication method while two-factor authentication is required."
+msgstr "Du kannst deine letzte Authentifizierungsmethode nicht entfernen, solange die Zwei-Faktor-Authentifizierung erforderlich ist."
+
+msgid "Invalid user."
+msgstr "Ungültiger Benutzer."
+
+msgid "User not found."
+msgstr "Benutzer nicht gefunden."
+
+msgid "You are not allowed to reset two-factor authentication for this user."
+msgstr "Du darfst die Zwei-Faktor-Authentifizierung für diesen Benutzer nicht zurücksetzen."
+
+msgid "Reset two-factor authentication for this user? Their enrolled methods will be removed and their sessions will end."
+msgstr "Zwei-Faktor-Authentifizierung für diesen Benutzer zurücksetzen? Die eingerichteten Methoden werden entfernt und die Sitzungen beendet."
+
+msgid "Reset 2FA"
+msgstr "2FA zurücksetzen"
+
+msgid "Two-factor authentication was reset for that user."
+msgstr "Die Zwei-Faktor-Authentifizierung wurde für diesen Benutzer zurückgesetzt."
+
+msgid "Could not reset two-factor authentication for that user."
+msgstr "Die Zwei-Faktor-Authentifizierung konnte für diesen Benutzer nicht zurückgesetzt werden."
+
+msgid "a site administrator"
+msgstr "ein Website-Administrator"
+
+msgid "a site administrator (via command line)"
+msgstr "ein Website-Administrator (über die Kommandozeile)"
+
+msgid "Your two-factor authentication was reset on %s"
+msgstr "Deine Zwei-Faktor-Authentifizierung wurde auf %s zurückgesetzt"
+
+msgid ""
+"Your two-factor authentication methods on %1$s were reset by %2$s.\\n"
+"\\n"
+"You can sign in with your password alone until you set up two-factor authentication again.\\n"
+"\\n"
+"If you did not expect this change, contact a site administrator immediately."
+msgstr ""
+"Deine Methoden der Zwei-Faktor-Authentifizierung auf %1$s wurden von %2$s zurückgesetzt.\\n"
+"\\n"
+"Du kannst dich mit deinem Passwort allein anmelden, bis du die Zwei-Faktor-Authentifizierung erneut einrichtest.\\n"
+"\\n"
+"Falls du diese Änderung nicht erwartet hast, kontaktiere umgehend einen Website-Administrator."
+
+msgid "You do not have permission to save these settings."
+msgstr "Du hast keine Berechtigung, diese Einstellungen zu speichern."
+
+msgid "2FA"
+msgstr "2FA"
+
+msgid "Not set up"
+msgstr "Nicht eingerichtet"
+
+msgid "Not set up (due %s)"
+msgstr "Nicht eingerichtet (fällig %s)"
+
+msgid "Backup codes"
+msgstr "Backup-Codes"
+
+msgid "Backup codes are already set. Generate new codes to replace them; the old ones will stop working."
+msgstr "Backup-Codes sind bereits eingerichtet. Generiere neue Codes, um sie zu ersetzen; die alten funktionieren dann nicht mehr."
+
+msgid "%d backup code remaining."
+msgid_plural "%d backup codes remaining."
+msgstr[0] "%d Backup-Code übrig."
+msgstr[1] "%d Backup-Codes übrig."
+
+msgid "Backup codes have not been generated yet."
+msgstr "Es wurden noch keine Backup-Codes generiert."
+
+msgid "Save these backup codes now. They will not be shown again."
+msgstr "Speichere diese Backup-Codes jetzt. Sie werden nicht erneut angezeigt."
+
+msgid "Each code can be used once if you lose access to your other authentication methods."
+msgstr "Jeder Code kann einmal verwendet werden, wenn du den Zugang zu deinen anderen Authentifizierungsmethoden verlierst."
+
+msgid "Download as text"
+msgstr "Als Text herunterladen"
+
+msgid "Enter one of your backup codes."
+msgstr "Gib einen deiner Backup-Codes ein."
+
+msgid "Backup code"
+msgstr "Backup-Code"
+
+msgid "Email code"
+msgstr "E-Mail-Code"
+
+msgid "We will send a six-digit code to your account email when you sign in."
+msgstr "Wir senden beim Anmelden einen sechsstelligen Code an die E-Mail-Adresse deines Kontos."
+
+msgid "Codes go to: %s"
+msgstr "Codes gehen an: %s"
+
+msgid "Your account needs a valid email address to use email codes."
+msgstr "Dein Konto benötigt eine gültige E-Mail-Adresse, um E-Mail-Codes zu nutzen."
+
+msgid "Enter the six-digit code we sent to your email."
+msgstr "Gib den sechsstelligen Code ein, den wir an deine E-Mail-Adresse gesendet haben."
+
+msgid "Your login code for %s"
+msgstr "Dein Anmeldecode für %s"
+
+msgid ""
+"Someone is trying to sign in to %1$s.\\n"
+"\\n"
+"Your one-time code is: %2$s\\n"
+"\\n"
+"This code expires in ten minutes and can only be used once.\\n"
+"\\n"
+"Nobody from %1$s will ever ask you for this code. If you did not try to sign in, you can ignore this email."
+msgstr ""
+"Jemand versucht, sich bei %1$s anzumelden.\\n"
+"\\n"
+"Dein Einmalcode lautet: %2$s\\n"
+"\\n"
+"Dieser Code läuft in zehn Minuten ab und kann nur einmal verwendet werden.\\n"
+"\\n"
+"Niemand von %1$s wird dich jemals nach diesem Code fragen. Falls du dich nicht anmelden wolltest, kannst du diese E-Mail ignorieren."
+
+msgid "Passkey"
+msgstr "Passkey"
+
+msgid "Passkeys are not available in this environment."
+msgstr "Passkeys sind in dieser Umgebung nicht verfügbar."
+
+msgid "Register a passkey for this account. You will be prompted by your browser or device."
+msgstr "Registriere einen Passkey für dieses Konto. Du wirst von deinem Browser oder Gerät aufgefordert."
+
+msgid "Device label"
+msgstr "Gerätebezeichnung"
+
+msgid "Register passkey"
+msgstr "Passkey registrieren"
+
+msgid "You are not allowed to enrol a passkey for this user."
+msgstr "Du darfst für diesen Benutzer keinen Passkey registrieren."
+
+msgid "Invalid passkey registration data."
+msgstr "Ungültige Passkey-Registrierungsdaten."
+
+msgid "Registration challenge expired. Please try again."
+msgstr "Die Registrierungsanfrage ist abgelaufen. Bitte versuche es erneut."
+
+msgid "Passkey registration failed verification."
+msgstr "Die Passkey-Registrierung hat die Verifizierung nicht bestanden."
+
+msgid "This passkey is already registered."
+msgstr "Dieser Passkey ist bereits registriert."
+
+msgid "Could not store the passkey."
+msgstr "Der Passkey konnte nicht gespeichert werden."
+
+msgid "Use your passkey to continue."
+msgstr "Verwende deinen Passkey, um fortzufahren."
+
+msgid "Use passkey"
+msgstr "Passkey verwenden"
+
+msgid "Could not start passkey registration."
+msgstr "Die Passkey-Registrierung konnte nicht gestartet werden."
+
+msgid "Passkey registered."
+msgstr "Passkey registriert."
+
+msgid "You are not allowed to use this passkey challenge."
+msgstr "Du darfst diese Passkey-Challenge nicht verwenden."
+
+msgid "No passkeys are registered for this account."
+msgstr "Für dieses Konto sind keine Passkeys registriert."
+
+msgid "Could not start passkey authentication."
+msgstr "Die Passkey-Authentifizierung konnte nicht gestartet werden."
+
+msgid "Passkey authentication failed."
+msgstr "Passkey-Authentifizierung fehlgeschlagen."
+
+msgid "Passkey verified."
+msgstr "Passkey verifiziert."
+
+msgid "Passkeys are not supported in this browser or context. Use HTTPS and a modern browser."
+msgstr "Passkeys werden in diesem Browser oder Kontext nicht unterstützt. Verwende HTTPS und einen modernen Browser."
+
+msgid "Follow the browser prompt to register your passkey…"
+msgstr "Folge der Browser-Aufforderung, um deinen Passkey zu registrieren…"
+
+msgid "Follow the browser prompt to use your passkey…"
+msgstr "Folge der Browser-Aufforderung, um deinen Passkey zu verwenden…"
+
+msgid "Something went wrong. Please try again."
+msgstr "Etwas ist schiefgelaufen. Bitte versuche es erneut."
+
+msgid "Authenticator app"
+msgstr "Authenticator-App"
+
+msgid "Secret key"
+msgstr "Geheimer Schlüssel"
+
+msgid "Provisioning URI"
+msgstr "Provisioning-URI"
+
+msgid "Verification code"
+msgstr "Bestätigungscode"
+
+msgid "Invalid authenticator secret."
+msgstr "Ungültiges Authenticator-Geheimnis."
+
+msgid "Enter the 6-digit code from your authenticator app."
+msgstr "Gib den 6-stelligen Code aus deiner Authenticator-App ein."
+
+msgid "That code did not match. Check the time on your device and try again."
+msgstr "Dieser Code stimmte nicht überein. Prüfe die Uhrzeit auf deinem Gerät und versuche es erneut."
+
+msgid "Could not store the authenticator secret."
+msgstr "Das Authenticator-Geheimnis konnte nicht gespeichert werden."
+
+msgid "Authenticator code"
+msgstr "Authenticator-Code"
+
+msgid "Enter a verification code to finish signing in."
+msgstr "Gib einen Bestätigungscode ein, um die Anmeldung abzuschließen."
+
+msgid "Authentication methods"
+msgstr "Authentifizierungsmethoden"
+
+msgid "Verify"
+msgstr "Bestätigen"
+
+msgid "Cancel and go back to login"
+msgstr "Abbrechen und zur Anmeldung zurück"
+
+msgid "Add a second step to your sign-in. Passkeys are the simplest option when your device supports them; an authenticator app works everywhere."
+msgstr "Füge deiner Anmeldung einen zweiten Schritt hinzu. Passkeys sind die einfachste Option, wenn dein Gerät sie unterstützt; eine Authenticator-App funktioniert überall."
+
+msgid "Method saved. Save your backup codes below — they will not be shown again."
+msgstr "Methode gespeichert. Speichere deine Backup-Codes unten – sie werden nicht erneut angezeigt."
+
+msgid "Authentication method saved."
+msgstr "Authentifizierungsmethode gespeichert."
+
+msgid "Authentication method removed."
+msgstr "Authentifizierungsmethode entfernt."
+
+msgid "Saved."
+msgstr "Gespeichert."
+
+msgid "Could not update two-factor authentication."
+msgstr "Die Zwei-Faktor-Authentifizierung konnte nicht aktualisiert werden."
+
+msgid "Active methods:"
+msgstr "Aktive Methoden:"
+
+msgid "No authentication methods are set up yet."
+msgstr "Es sind noch keine Authentifizierungsmethoden eingerichtet."
+
+msgid "On"
+msgstr "An"
+
+msgid "Generate new backup codes"
+msgstr "Neue Backup-Codes generieren"
+
+msgid "Generating new codes invalidates any codes you still have written down."
+msgstr "Das Generieren neuer Codes macht alle Codes ungültig, die du noch notiert hast."
+
+msgid "Generate backup codes"
+msgstr "Backup-Codes generieren"
+
+msgid "This method is set up on your account."
+msgstr "Diese Methode ist für dein Konto eingerichtet."
+
+msgid "Remove this method"
+msgstr "Diese Methode entfernen"
+
+msgid "You can register another passkey below."
+msgstr "Du kannst unten einen weiteren Passkey registrieren."
+
+msgid "Enable %s"
+msgstr "%s aktivieren"
+
+msgid "Settings saved."
+msgstr "Einstellungen gespeichert."
+
+msgid "What 2FA protects"
+msgstr "Was 2FA schützt"
+
+msgid "Easy 2FA protects interactive logins (the normal WordPress login form and the challenge that follows). It does not apply to application passwords. REST API and XML-RPC requests authenticated with an application password bypass two-factor authentication entirely. If a role should not use that hole, disable application passwords for that role below."
+msgstr "Easy 2FA schützt interaktive Anmeldungen (das normale WordPress-Anmeldeformular und die anschließende Abfrage). Es gilt nicht für Anwendungspasswörter. REST-API- und XML-RPC-Anfragen, die mit einem Anwendungspasswort authentifiziert sind, umgehen die Zwei-Faktor-Authentifizierung vollständig. Wenn eine Rolle dieses Schlupfloch nicht nutzen soll, deaktiviere unten die Anwendungspasswörter für diese Rolle."
+
+msgid "Enforcement"
+msgstr "Erzwingung"
+
+msgid "Require two-factor authentication for selected roles"
+msgstr "Zwei-Faktor-Authentifizierung für ausgewählte Rollen erfordern"
+
+msgid "Roles that must enrol"
+msgstr "Rollen mit Pflicht-Einrichtung"
+
+msgid "No roles found."
+msgstr "Keine Rollen gefunden."
+
+msgid "Minimum capability"
+msgstr "Mindestberechtigung"
+
+msgid "Optional. Any user with this capability is covered regardless of role. Roles and capability are combined with OR."
+msgstr "Optional. Jeder Benutzer mit dieser Berechtigung ist unabhängig von der Rolle abgedeckt. Rollen und Berechtigung werden mit ODER kombiniert."
+
+msgid "Grace period (days)"
+msgstr "Übergangsfrist (Tage)"
+
+msgid "Days after first coverage before enrolment is forced. Zero means enrol on next login."
+msgstr "Tage nach der ersten Erfassung, bevor die Einrichtung erzwungen wird. Null bedeutet Einrichtung bei der nächsten Anmeldung."
+
+msgid "Disable application passwords"
+msgstr "Anwendungspasswörter deaktivieren"
+
+msgid "Blocks creating and using application passwords for the selected roles. Use this when interactive 2FA alone is not enough for that role."
+msgstr "Blockiert das Erstellen und Verwenden von Anwendungspasswörtern für die ausgewählten Rollen. Nutze dies, wenn interaktive 2FA allein für diese Rolle nicht ausreicht."
+
+msgid "Save settings"
+msgstr "Einstellungen speichern"
