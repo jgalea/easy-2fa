@@ -122,8 +122,11 @@ final class TOTP implements Provider {
 	}
 
 	public function render_challenge( int $user_id ): void {
+		// Field name is "code" to match what validate() reads and what the backup
+		// and email providers already use. The challenge handler passes raw POST
+		// straight through, so a mismatch here silently fails every login.
 		echo '<p><label for="easy2fa-totp-challenge">' . esc_html__( 'Authenticator code', 'easy-2fa' ) . '</label> ';
-		echo '<input type="text" name="easy2fa_totp_code" id="easy2fa-totp-challenge" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" maxlength="6" /></p>';
+		echo '<input type="text" name="code" id="easy2fa-totp-challenge" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" maxlength="6" /></p>';
 	}
 
 	/**
