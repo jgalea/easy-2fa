@@ -1,0 +1,30 @@
+name: Deploy to WordPress.org
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  deploy:
+    name: Deploy to wp.org
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Guard against shipping dev scaffolding
+        run: |
+          for path in tests e2e build dist docs; do
+            if [ -e "$path" ] && ! grep -qx "/$path" .distignore; then
+              echo "::error::$path exists but is not excluded in .distignore"
+              exit 1
+            fi
+          done
+
+      - name: WordPress Plugin Deploy
+        uses: 10up/action-wordpress-plugin-deploy@stable
+        env:
+          SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
+          SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+          SLUG: easy-2fa
+          ASSETS_DIR: .wordpress-org
