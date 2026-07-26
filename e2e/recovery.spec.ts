@@ -16,10 +16,11 @@ test('backup code gets you in when the authenticator is gone, and CLI reset clea
 	await page.fill('input[name="easy2fa_totp_code"]', totp(secret));
 	await page.locator('button[type="submit"], input[type="submit"]').filter({ hasText: /enrol|enable|verify|confirm|save/i }).first().click();
 
-	// Capture a backup code from the one-time display.
-	await expect(page.locator('body')).toContainText(/backup code/i);
-	const codes = await page.locator('.easy2fa-backup-code, code').allInnerTexts();
-	const backup = codes.map((c) => c.trim()).find((c) => /^[A-Z2-9]{4,}-?[A-Z2-9]{2,}$/i.test(c) && c.length >= 6);
+	// Capture a backup code from the one-time display. Codes are 8 chars from
+	// the alphabet 23456789A-Z (no 0/O/1/I), rendered as <li><code>.
+	await expect(page.locator('.easy2fa-backup-codes-list code').first()).toBeVisible();
+	const codes = await page.locator('.easy2fa-backup-codes-list code').allInnerTexts();
+	const backup = codes.map((c) => c.trim()).find((c) => /^[A-HJ-NP-Z2-9]{8}$/.test(c));
 	expect(backup, 'a backup code should be shown').toBeTruthy();
 
 	await logout(page);

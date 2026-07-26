@@ -4,6 +4,7 @@ declare( strict_types=1 );
 
 namespace Easy2FA\Providers;
 
+use Easy2FA\Crypto;
 use Easy2FA\Provider;
 use Easy2FA\Store;
 
@@ -63,9 +64,39 @@ final class Backup_Codes implements Provider {
 			)
 		);
 
-		set_transient( $this->display_transient_key( $user_id ), $plaintext, 5 * MINUTE_IN_SECONDS );
+		// Encrypt the one-time display copy: without a persistent object cache a
+		// transient lives in wp_options, and these are valid backup codes.
+		// base64 because Crypto output is raw binary and does not survive storage
+		// in a transient (utf8 column truncates it at the first null byte). This
+		// matches how the TOTP secret is stored.
+		set_transient(
+			$this->display_transient_key( $user_id ),
+			base64_encode( Crypto::encrypt( (string) wp_json_encode( $plaintext ) ) ),
+			5 * MINUTE_IN_SECONDS
+		);
 
 		return $plaintext;
+	}
+
+	private function read_display_codes( int $user_id ): array {
+		$raw = get_transient( $this->display_transient_key( $user_id ) );
+		if ( ! is_string( $raw ) || '' === $raw ) {
+			return array();
+		}
+		$cipher = base64_decode( $raw, true );
+		if ( false === $cipher ) {
+			return array();
+		}
+		$json = Crypto::decrypt( $cipher );
+		if ( '' === $json ) {
+			return array();
+		}
+		$codes = json_decode( $json, true );
+		return is_array( $codes ) ? array_map( 'strval', $codes ) : array();
+	}
+
+	public function has_pending_display( int $user_id ): bool {
+		return array() !== $this->read_display_codes( $user_id );
 	}
 
 	public function remaining( int $user_id ): int {
@@ -85,8 +116,8 @@ final class Backup_Codes implements Provider {
 	}
 
 	public function render_enrol( int $user_id ): void {
-		$codes = get_transient( $this->display_transient_key( $user_id ) );
-		if ( ! is_array( $codes ) || [] === $codes ) {
+		$codes = $this->read_display_codes( $user_id );
+		if ( [] === $codes ) {
 			if ( $this->is_enrolled( $user_id ) ) {
 				echo '<p>' . esc_html__( 'Backup codes are already set. Generate new codes to replace them; the old ones will stop working.', 'easy-2fa' ) . '</p>';
 				echo '<p>' . esc_html(

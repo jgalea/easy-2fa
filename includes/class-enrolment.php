@@ -341,8 +341,8 @@ final class Enrolment {
 	}
 
 	private function backup_codes_pending_display( int $user_id ): bool {
-		$codes = get_transient( 'easy2fa_backup_show_' . $user_id );
-		return is_array( $codes ) && array() !== $codes;
+		$backup = Providers::instance()->get( 'backup' );
+		return $backup instanceof Providers\Backup_Codes && $backup->has_pending_display( $user_id );
 	}
 
 	private function render_enrol_ui( int $user_id, bool $is_setup_page ): void {

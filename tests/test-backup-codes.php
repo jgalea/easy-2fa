@@ -34,4 +34,15 @@ class Test_Backup_Codes extends WP_UnitTestCase {
 		$p->generate( $uid );
 		$this->assertFalse( $p->validate( $uid, [ 'code' => $old[0] ] ) );
 	}
+
+	public function test_display_transient_roundtrips_and_is_not_plaintext(): void {
+		$uid   = self::factory()->user->create();
+		$p     = new \Easy2FA\Providers\Backup_Codes();
+		$codes = $p->generate( $uid );
+		$this->assertTrue( $p->has_pending_display( $uid ) );
+		// The stored display copy must not contain a code in plaintext.
+		$raw = get_transient( 'easy2fa_backup_show_' . $uid );
+		$this->assertIsString( $raw );
+		$this->assertStringNotContainsString( $codes[0], $raw );
+	}
 }
