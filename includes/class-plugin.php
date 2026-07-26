@@ -49,5 +49,8 @@ final class Plugin {
 
 		require_once EASY2FA_DIR . 'includes/class-enrolment.php';
 		Enrolment::instance();
+
+		require_once EASY2FA_DIR . 'includes/class-enforcement.php';
+		Enforcement::instance();
 	}
 }
