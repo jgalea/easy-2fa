@@ -31,7 +31,7 @@
 		// Fallback: show a copyable URI block so enrolment still works without a QR lib.
 		container.innerHTML = '';
 		var pre = document.createElement('code');
-		pre.className = 'easy2fa-totp-qr-fallback';
+		pre.className = 'sigil-totp-qr-fallback';
 		pre.textContent = text;
 		container.appendChild(pre);
 
@@ -42,7 +42,7 @@
 	}
 
 	function initTotpQr() {
-		var nodes = document.querySelectorAll('.easy2fa-totp-qr[data-otpauth]');
+		var nodes = document.querySelectorAll('.sigil-totp-qr[data-otpauth]');
 		for (var i = 0; i < nodes.length; i++) {
 			var el = nodes[i];
 			var uri = el.getAttribute('data-otpauth') || '';

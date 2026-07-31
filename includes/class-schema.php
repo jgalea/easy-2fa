@@ -2,7 +2,7 @@
 
 declare( strict_types=1 );
 
-namespace Easy2FA;
+namespace Sigil;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -24,14 +24,14 @@ final class Schema {
 	// would throw. A passkey credential can only be created during admin
 	// enrolment, so checking here guarantees the table exists before one can.
 	public function maybe_install(): void {
-		if ( get_option( 'easy2fa_db_version' ) !== EASY2FA_VERSION ) {
+		if ( get_option( 'sigil_db_version' ) !== SIGIL_VERSION ) {
 			self::install();
 		}
 	}
 
 	public static function table(): string {
 		global $wpdb;
-		return $wpdb->prefix . 'easy2fa_credentials';
+		return $wpdb->prefix . 'sigil_credentials';
 	}
 
 	public static function install(): void {
@@ -58,6 +58,6 @@ final class Schema {
 		) {$charset_collate};";
 
 		dbDelta( $sql );
-		update_option( 'easy2fa_db_version', EASY2FA_VERSION, false );
+		update_option( 'sigil_db_version', SIGIL_VERSION, false );
 	}
 }

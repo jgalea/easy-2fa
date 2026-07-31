@@ -2,7 +2,7 @@
 
 declare( strict_types=1 );
 
-namespace Easy2FA;
+namespace Sigil;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -71,13 +71,18 @@ final class Credentials {
 
 		$table = Schema::table();
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// Passkey credentials live in a plugin-owned table, so there is no core API to
+		// read them through. The only interpolated value is the table name from
+		// Schema::table(), which is $wpdb->prefix plus a literal; $wpdb->prepare cannot
+		// take a table name as a placeholder. Every user-supplied value is prepared.
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT * FROM {$table} WHERE user_id = %d ORDER BY id ASC",
 				$user_id
 			)
 		);
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
 
 		return is_array( $rows ) ? $rows : [];
 	}
@@ -91,13 +96,16 @@ final class Credentials {
 
 		$table = Schema::table();
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// See the note in for_user(): plugin-owned table, table name from Schema::table(),
+		// user-supplied credential id passed through $wpdb->prepare.
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
 		$row = $wpdb->get_row(
 			$wpdb->prepare(
 				"SELECT * FROM {$table} WHERE credential_id = %s LIMIT 1",
 				$credential_id
 			)
 		);
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
 
 		return $row instanceof \stdClass ? $row : null;
 	}

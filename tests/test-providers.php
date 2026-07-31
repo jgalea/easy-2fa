@@ -4,13 +4,13 @@ declare( strict_types=1 );
 
 class Test_Providers extends WP_UnitTestCase {
 	public function test_sorted_by_priority(): void {
-		$ids = array_map( fn( $p ) => $p->id(), \Easy2FA\Providers::instance()->all() );
+		$ids = array_map( fn( $p ) => $p->id(), \Sigil\Providers::instance()->all() );
 		$this->assertSame( array_values( array_unique( $ids ) ), $ids );
 		$this->assertNotEmpty( $ids );
 	}
 
 	public function test_unavailable_provider_is_hidden(): void {
-		$fake = new class implements \Easy2FA\Provider {
+		$fake = new class implements \Sigil\Provider {
 			public function id(): string {
 				return 'fake-unavailable';
 			}
@@ -49,13 +49,13 @@ class Test_Providers extends WP_UnitTestCase {
 			}
 		};
 
-		\Easy2FA\Providers::instance()->register( $fake );
-		$this->assertNull( \Easy2FA\Providers::instance()->get( $fake->id() ) );
+		\Sigil\Providers::instance()->register( $fake );
+		$this->assertNull( \Sigil\Providers::instance()->get( $fake->id() ) );
 	}
 
 	public function test_preferred_is_lowest_priority_enrolled(): void {
 		$uid = self::factory()->user->create();
-		\Easy2FA\Store::set_method( $uid, 'totp', [ 'secret' => 'x' ] );
-		$this->assertSame( 'totp', \Easy2FA\Providers::instance()->preferred_for( $uid )->id() );
+		\Sigil\Store::set_method( $uid, 'totp', [ 'secret' => 'x' ] );
+		$this->assertSame( 'totp', \Sigil\Providers::instance()->preferred_for( $uid )->id() );
 	}
 }

@@ -1,14 +1,14 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: Easy 2FA 0.1.0\n"
+"Project-Id-Version: Sigil 0.1.0\n"
 "Language: pt_PT\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-msgid "Easy 2FA"
-msgstr "Easy 2FA"
+msgid "Sigil"
+msgstr "Sigil"
 
 msgid "Two-factor authentication that should have been standard. Passkeys, authenticator apps, backup codes and email codes, with per-role enforcement and recovery that actually works."
 msgstr "Autenticação de dois fatores como devia ser de origem. Chaves de acesso, aplicações autenticadoras, códigos de segurança e códigos por e-mail, com obrigatoriedade por função e recuperação que funciona de verdade."
@@ -354,8 +354,8 @@ msgstr "Definições guardadas."
 msgid "What 2FA protects"
 msgstr "O que a 2FA protege"
 
-msgid "Easy 2FA protects interactive logins (the normal WordPress login form and the challenge that follows). It does not apply to application passwords. REST API and XML-RPC requests authenticated with an application password bypass two-factor authentication entirely. If a role should not use that hole, disable application passwords for that role below."
-msgstr "O Easy 2FA protege os inícios de sessão interativos (o formulário de início de sessão normal do WordPress e o desafio que se segue). Não se aplica a palavras-passe de aplicação. Os pedidos REST API e XML-RPC autenticados com uma palavra-passe de aplicação contornam por completo a autenticação de dois fatores. Se uma função não deve usar essa brecha, desative as palavras-passe de aplicação para essa função abaixo."
+msgid "Sigil protects interactive logins (the normal WordPress login form and the challenge that follows). It does not apply to application passwords. REST API and XML-RPC requests authenticated with an application password bypass two-factor authentication entirely. If a role should not use that hole, disable application passwords for that role below."
+msgstr "O Sigil protege os inícios de sessão interativos (o formulário de início de sessão normal do WordPress e o desafio que se segue). Não se aplica a palavras-passe de aplicação. Os pedidos REST API e XML-RPC autenticados com uma palavra-passe de aplicação contornam por completo a autenticação de dois fatores. Se uma função não deve usar essa brecha, desative as palavras-passe de aplicação para essa função abaixo."
 
 msgid "Enforcement"
 msgstr "Obrigatoriedade"

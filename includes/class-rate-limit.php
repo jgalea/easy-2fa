@@ -2,7 +2,7 @@
 
 declare( strict_types=1 );
 
-namespace Easy2FA;
+namespace Sigil;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -41,6 +41,6 @@ final class Rate_Limit {
 	}
 
 	private static function transient_key( string $key ): string {
-		return 'easy2fa_rl_' . hash( 'sha256', $key );
+		return 'sigil_rl_' . hash( 'sha256', $key );
 	}
 }

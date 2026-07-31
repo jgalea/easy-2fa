@@ -2,15 +2,15 @@
 
 declare( strict_types=1 );
 
-namespace Easy2FA;
+namespace Sigil;
 
 defined( 'ABSPATH' ) || exit;
 
 final class Enforcement {
 
-	public const SETUP_PAGE = 'easy-2fa-setup';
+	public const SETUP_PAGE = 'sigil-2fa-setup';
 
-	private const DISMISS_COOKIE = 'easy2fa_grace_notice';
+	private const DISMISS_COOKIE = 'sigil_grace_notice';
 
 	private static ?Enforcement $instance = null;
 
@@ -25,7 +25,7 @@ final class Enforcement {
 		add_action( 'admin_init', array( $this, 'maybe_redirect' ) );
 		add_action( 'template_redirect', array( $this, 'maybe_redirect' ) );
 		add_action( 'admin_notices', array( $this, 'grace_notice' ) );
-		add_action( 'admin_post_easy2fa_dismiss_grace_notice', array( $this, 'dismiss_grace_notice' ) );
+		add_action( 'admin_post_sigil_dismiss_grace_notice', array( $this, 'dismiss_grace_notice' ) );
 	}
 
 	/**
@@ -80,33 +80,33 @@ final class Enforcement {
 
 		$setup_url = admin_url( 'admin.php?page=' . self::SETUP_PAGE );
 		$dismiss   = wp_nonce_url(
-			admin_url( 'admin-post.php?action=easy2fa_dismiss_grace_notice' ),
-			'easy2fa_dismiss_grace_notice'
+			admin_url( 'admin-post.php?action=sigil_dismiss_grace_notice' ),
+			'sigil_dismiss_grace_notice'
 		);
 
 		if ( 1 === $days_left ) {
-			$message = __( 'Two-factor authentication is required for your account. You have 1 day left to set it up.', 'easy-2fa' );
+			$message = __( 'Two-factor authentication is required for your account. You have 1 day left to set it up.', 'sigil-2fa' );
 		} else {
 			$message = sprintf(
 				/* translators: %d: days remaining in the grace period */
-				__( 'Two-factor authentication is required for your account. You have %d days left to set it up.', 'easy-2fa' ),
+				__( 'Two-factor authentication is required for your account. You have %d days left to set it up.', 'sigil-2fa' ),
 				$days_left
 			);
 		}
 
 		echo '<div class="notice notice-warning is-dismissible"><p>';
 		echo esc_html( $message );
-		echo ' <a href="' . esc_url( $setup_url ) . '">' . esc_html__( 'Set up 2FA now', 'easy-2fa' ) . '</a>';
-		echo ' | <a href="' . esc_url( $dismiss ) . '">' . esc_html__( 'Dismiss', 'easy-2fa' ) . '</a>';
+		echo ' <a href="' . esc_url( $setup_url ) . '">' . esc_html__( 'Set up 2FA now', 'sigil-2fa' ) . '</a>';
+		echo ' | <a href="' . esc_url( $dismiss ) . '">' . esc_html__( 'Dismiss', 'sigil-2fa' ) . '</a>';
 		echo '</p></div>';
 	}
 
 	public function dismiss_grace_notice(): void {
 		if ( ! is_user_logged_in() ) {
-			wp_die( esc_html__( 'You must be logged in.', 'easy-2fa' ) );
+			wp_die( esc_html__( 'You must be logged in.', 'sigil-2fa' ) );
 		}
 
-		check_admin_referer( 'easy2fa_dismiss_grace_notice' );
+		check_admin_referer( 'sigil_dismiss_grace_notice' );
 
 		// Session cookie: expires when the browser session ends.
 		setcookie( self::DISMISS_COOKIE, '1', 0, COOKIEPATH ? COOKIEPATH : '/', COOKIE_DOMAIN, is_ssl(), true );
@@ -191,7 +191,9 @@ final class Enforcement {
 			return true;
 		}
 
-		$script = isset( $_SERVER['SCRIPT_FILENAME'] ) ? (string) $_SERVER['SCRIPT_FILENAME'] : '';
+		$script = isset( $_SERVER['SCRIPT_FILENAME'] )
+			? sanitize_text_field( wp_unslash( (string) $_SERVER['SCRIPT_FILENAME'] ) )
+			: '';
 		if ( '' !== $script ) {
 			$base = basename( $script );
 			if ( in_array( $base, array( 'admin-ajax.php', 'admin-post.php', 'wp-login.php' ), true ) ) {

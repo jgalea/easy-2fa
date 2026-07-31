@@ -2,7 +2,7 @@
 
 declare( strict_types=1 );
 
-namespace Easy2FA;
+namespace Sigil;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -19,22 +19,22 @@ final class Settings {
 
 	private function __construct() {
 		add_action( 'admin_menu', array( $this, 'register_menu' ) );
-		add_action( 'admin_post_easy2fa_save_settings', array( $this, 'handle_save' ) );
+		add_action( 'admin_post_sigil_save_settings', array( $this, 'handle_save' ) );
 	}
 
 	public function register_menu(): void {
 		add_options_page(
-			__( 'Easy 2FA', 'easy-2fa' ),
-			__( 'Easy 2FA', 'easy-2fa' ),
+			__( 'Sigil', 'sigil-2fa' ),
+			__( 'Sigil', 'sigil-2fa' ),
 			'manage_options',
-			'easy-2fa',
+			'sigil-2fa',
 			array( $this, 'render_page' )
 		);
 	}
 
 	public function render_page(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have permission to access this page.', 'easy-2fa' ) );
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'sigil-2fa' ) );
 		}
 
 		$policy = Policy::get();
@@ -43,20 +43,21 @@ final class Settings {
 			$roles = array();
 		}
 
-		$updated = isset( $_GET['updated'] ) && '1' === (string) $_GET['updated']; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only notice flag set by our own redirect.
+		$updated = isset( $_GET['updated'] ) && '1' === sanitize_key( wp_unslash( $_GET['updated'] ) );
 
-		require EASY2FA_DIR . 'templates/settings.php';
+		require SIGIL_DIR . 'templates/settings.php';
 	}
 
 	public function handle_save(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have permission to save these settings.', 'easy-2fa' ) );
+			wp_die( esc_html__( 'You do not have permission to save these settings.', 'sigil-2fa' ) );
 		}
 
-		check_admin_referer( 'easy2fa_save_settings' );
+		check_admin_referer( 'sigil_save_settings' );
 
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized below field by field.
-		$raw = isset( $_POST['easy2fa_policy'] ) && is_array( $_POST['easy2fa_policy'] ) ? wp_unslash( $_POST['easy2fa_policy'] ) : array();
+		$raw = isset( $_POST['sigil_policy'] ) && is_array( $_POST['sigil_policy'] ) ? wp_unslash( $_POST['sigil_policy'] ) : array();
 
 		// Unchecked boxes are absent from POST; enumerate every role so clears stick.
 		$known_roles = array_keys( wp_roles()->roles );
@@ -97,7 +98,7 @@ final class Settings {
 		wp_safe_redirect(
 			add_query_arg(
 				array(
-					'page'    => 'easy-2fa',
+					'page'    => 'sigil-2fa',
 					'updated' => '1',
 				),
 				admin_url( 'options-general.php' )

@@ -1,4 +1,4 @@
-=== Easy 2FA ===
+=== Sigil ===
 Contributors: rebelcode
 Tags: two-factor, 2fa, passkeys, authentication, security
 Requires at least: 6.9
@@ -12,9 +12,9 @@ Claves de acceso, aplicaciones de autenticación, códigos de respaldo y 2FA por
 
 == Description ==
 
-Easy 2FA añade un segundo paso a los inicios de sesión de WordPress y ofrece gratis todo lo que un sitio necesita para estar bien protegido. Claves de acceso, aplicaciones de autenticación, códigos de respaldo, obligatoriedad por perfil y una recuperación que de verdad devuelve el acceso a quien se ha quedado fuera. Nada de esto se reserva para una versión de pago.
+Sigil añade un segundo paso a los inicios de sesión de WordPress y ofrece gratis todo lo que un sitio necesita para estar bien protegido. Claves de acceso, aplicaciones de autenticación, códigos de respaldo, obligatoriedad por perfil y una recuperación que de verdad devuelve el acceso a quien se ha quedado fuera. Nada de esto se reserva para una versión de pago.
 
-La mayoría de los complementos de 2FA esconden la obligatoriedad por perfil detrás de un muro de pago, limitan la versión gratuita a un puñado de usuarios, o se distribuyen como una pieza más de una suite de seguridad pesada. Easy 2FA hace una sola cosa y la hace por completo.
+La mayoría de los complementos de 2FA esconden la obligatoriedad por perfil detrás de un muro de pago, limitan la versión gratuita a un puñado de usuarios, o se distribuyen como una pieza más de una suite de seguridad pesada. Sigil hace una sola cosa y la hace por completo.
 
 **Métodos**
 
@@ -31,7 +31,7 @@ La mayoría de los complementos de 2FA esconden la obligatoriedad por perfil det
 
 **Recuperación**
 
-Quedarse fuera es la razón por la que mucha gente nunca activa la 2FA. Easy 2FA se lo toma en serio:
+Quedarse fuera es la razón por la que mucha gente nunca activa la 2FA. Sigil se lo toma en serio:
 
 * Los códigos de respaldo se generan y se muestran al configurar el primer método, no como una idea de última hora.
 * Cualquier administrador puede restablecer la 2FA de otro usuario desde la pantalla de Usuarios.
@@ -39,14 +39,14 @@ Quedarse fuera es la razón por la que mucha gente nunca activa la 2FA. Easy 2FA
 
 **Contraseñas de aplicación**
 
-La 2FA no se aplica a las contraseñas de aplicación, que autentican la API REST y XML-RPC. Easy 2FA lo indica con claridad en su pantalla de ajustes y te permite desactivar las contraseñas de aplicación por perfil si quieres cerrar esa vía.
+La 2FA no se aplica a las contraseñas de aplicación, que autentican la API REST y XML-RPC. Sigil lo indica con claridad en su pantalla de ajustes y te permite desactivar las contraseñas de aplicación por perfil si quieres cerrar esa vía.
 
 == Installation ==
 
-1. Instálalo desde Plugins → Añadir nuevo y busca «Easy 2FA», o sube los archivos del complemento a `/wp-content/plugins/easy-2fa/`.
+1. Instálalo desde Plugins → Añadir nuevo y busca «Sigil», o sube los archivos del complemento a `/wp-content/plugins/sigil-2fa/`.
 2. Actívalo desde el menú Plugins.
 3. Ve a Usuarios → Configuración de doble factor y configura tu primer método. Guarda los códigos de respaldo que te muestre.
-4. Para exigir la 2FA a otros usuarios, abre Ajustes → Easy 2FA y elige los perfiles y el período de gracia.
+4. Para exigir la 2FA a otros usuarios, abre Ajustes → Sigil y elige los perfiles y el período de gracia.
 
 == Frequently Asked Questions ==
 
@@ -60,7 +60,7 @@ No. Las claves de acceso, la obligatoriedad por perfil, los códigos de respaldo
 
 = ¿Funciona con las contraseñas de aplicación, la API REST y XML-RPC? =
 
-Las contraseñas de aplicación se saltan la 2FA por diseño: así es como WordPress autentica las peticiones automatizadas. Easy 2FA lo documenta en su pantalla de ajustes y te permite desactivar las contraseñas de aplicación por perfil si prefieres cerrar esa vía.
+Las contraseñas de aplicación se saltan la 2FA por diseño: así es como WordPress autentica las peticiones automatizadas. Sigil lo documenta en su pantalla de ajustes y te permite desactivar las contraseñas de aplicación por perfil si prefieres cerrar esa vía.
 
 = ¿Qué versión de PHP necesito para las claves de acceso? =
 
@@ -68,7 +68,7 @@ Las claves de acceso necesitan PHP 8.0 o posterior. Con una versión anterior de
 
 = ¿Puedo exigir la 2FA solo a los administradores? =
 
-Sí. En Ajustes → Easy 2FA puedes elegir exactamente qué perfiles quedan obligados y establecer un período de gracia para que se avise a la gente en lugar de dejarla fuera de inmediato.
+Sí. En Ajustes → Sigil puedes elegir exactamente qué perfiles quedan obligados y establecer un período de gracia para que se avise a la gente en lugar de dejarla fuera de inmediato.
 
 == Changelog ==
 

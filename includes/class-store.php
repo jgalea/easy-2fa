@@ -2,13 +2,13 @@
 
 declare( strict_types=1 );
 
-namespace Easy2FA;
+namespace Sigil;
 
 defined( 'ABSPATH' ) || exit;
 
 final class Store {
 
-	public const META_KEY = '_easy2fa_methods';
+	public const META_KEY = '_sigil_methods';
 
 	/**
 	 * @return array<string, array<string, mixed>>

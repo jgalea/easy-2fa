@@ -1,5 +1,6 @@
 /pro
 /build
+/languages
 /dist
 /docs
 /e2e
@@ -13,6 +14,7 @@
 /.claude
 .gitignore
 .distignore
+.secret-scan-allow
 .DS_Store
 .wp-env.json
 phpunit.xml.dist

@@ -2,11 +2,11 @@
 
 declare( strict_types=1 );
 
-namespace Easy2FA\Providers;
+namespace Sigil\Providers;
 
-use Easy2FA\Crypto;
-use Easy2FA\Provider;
-use Easy2FA\Store;
+use Sigil\Crypto;
+use Sigil\Provider;
+use Sigil\Store;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -22,7 +22,7 @@ final class Backup_Codes implements Provider {
 	}
 
 	public function label(): string {
-		return __( 'Backup codes', 'easy-2fa' );
+		return __( 'Backup codes', 'sigil-2fa' );
 	}
 
 	public function priority(): int {
@@ -119,16 +119,16 @@ final class Backup_Codes implements Provider {
 		$codes = $this->read_display_codes( $user_id );
 		if ( [] === $codes ) {
 			if ( $this->is_enrolled( $user_id ) ) {
-				echo '<p>' . esc_html__( 'Backup codes are already set. Generate new codes to replace them; the old ones will stop working.', 'easy-2fa' ) . '</p>';
+				echo '<p>' . esc_html__( 'Backup codes are already set. Generate new codes to replace them; the old ones will stop working.', 'sigil-2fa' ) . '</p>';
 				echo '<p>' . esc_html(
 					sprintf(
 						/* translators: %d: number of unused backup codes remaining */
-						_n( '%d backup code remaining.', '%d backup codes remaining.', $this->remaining( $user_id ), 'easy-2fa' ),
+						_n( '%d backup code remaining.', '%d backup codes remaining.', $this->remaining( $user_id ), 'sigil-2fa' ),
 						$this->remaining( $user_id )
 					)
 				) . '</p>';
 			} else {
-				echo '<p>' . esc_html__( 'Backup codes have not been generated yet.', 'easy-2fa' ) . '</p>';
+				echo '<p>' . esc_html__( 'Backup codes have not been generated yet.', 'sigil-2fa' ) . '</p>';
 			}
 			return;
 		}
@@ -137,19 +137,19 @@ final class Backup_Codes implements Provider {
 
 		$body = implode( "\n", array_map( 'strval', $codes ) );
 
-		echo '<div class="easy2fa-backup-codes">';
-		echo '<p><strong>' . esc_html__( 'Save these backup codes now. They will not be shown again.', 'easy-2fa' ) . '</strong></p>';
-		echo '<p>' . esc_html__( 'Each code can be used once if you lose access to your other authentication methods.', 'easy-2fa' ) . '</p>';
-		echo '<ul class="easy2fa-backup-codes-list">';
+		echo '<div class="sigil-backup-codes">';
+		echo '<p><strong>' . esc_html__( 'Save these backup codes now. They will not be shown again.', 'sigil-2fa' ) . '</strong></p>';
+		echo '<p>' . esc_html__( 'Each code can be used once if you lose access to your other authentication methods.', 'sigil-2fa' ) . '</p>';
+		echo '<ul class="sigil-backup-codes-list">';
 		foreach ( $codes as $code ) {
 			echo '<li><code>' . esc_html( (string) $code ) . '</code></li>';
 		}
 		echo '</ul>';
 		printf(
 			'<p><a class="button" download="%1$s" href="data:text/plain;charset=utf-8,%2$s">%3$s</a></p>',
-			esc_attr( 'easy-2fa-backup-codes.txt' ),
+			esc_attr( 'sigil-2fa-backup-codes.txt' ),
 			rawurlencode( $body ),
-			esc_html__( 'Download as text', 'easy-2fa' )
+			esc_html__( 'Download as text', 'sigil-2fa' )
 		);
 		echo '</div>';
 	}
@@ -164,9 +164,9 @@ final class Backup_Codes implements Provider {
 	}
 
 	public function render_challenge( int $user_id ): void {
-		echo '<p>' . esc_html__( 'Enter one of your backup codes.', 'easy-2fa' ) . '</p>';
-		echo '<p><label for="easy2fa-backup-code">' . esc_html__( 'Backup code', 'easy-2fa' ) . '</label> ';
-		echo '<input type="text" name="code" id="easy2fa-backup-code" autocomplete="one-time-code" inputmode="text" autocapitalize="characters" spellcheck="false" required /></p>';
+		echo '<p>' . esc_html__( 'Enter one of your backup codes.', 'sigil-2fa' ) . '</p>';
+		echo '<p><label for="sigil-backup-code">' . esc_html__( 'Backup code', 'sigil-2fa' ) . '</label> ';
+		echo '<input type="text" name="code" id="sigil-backup-code" autocomplete="one-time-code" inputmode="text" autocapitalize="characters" spellcheck="false" required /></p>';
 	}
 
 	/**
@@ -232,6 +232,6 @@ final class Backup_Codes implements Provider {
 	}
 
 	private function display_transient_key( int $user_id ): string {
-		return 'easy2fa_backup_show_' . $user_id;
+		return 'sigil_backup_show_' . $user_id;
 	}
 }

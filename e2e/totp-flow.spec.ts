@@ -12,16 +12,16 @@ test('enrol TOTP, get challenged at login, and pass it', async ({ page }) => {
 	await login(page);
 
 	// Setup page lives under the Users menu; the TOTP tab is ?method=totp.
-	await page.goto('/wp-admin/users.php?page=easy-2fa-setup&method=totp');
+	await page.goto('/wp-admin/users.php?page=sigil-2fa-setup&method=totp');
 	await expect(page.locator('body')).toContainText(/two-factor|2fa|authenticat/i);
 
 	// The TOTP panel renders a hidden secret + a code field.
-	const secretLoc = page.locator('input[name="easy2fa_totp_secret"]');
+	const secretLoc = page.locator('input[name="sigil_totp_secret"]');
 	await expect(secretLoc).toHaveCount(1);
 	const secret = await secretLoc.inputValue();
 	expect(secret.length).toBeGreaterThanOrEqual(16);
 
-	await page.fill('input[name="easy2fa_totp_code"]', totp(secret));
+	await page.fill('input[name="sigil_totp_code"]', totp(secret));
 	await page.locator('button[type="submit"], input[type="submit"]').filter({ hasText: /enrol|enable|verify|confirm|save/i }).first().click();
 
 	// Backup codes must be shown exactly once, at first enrolment.
@@ -36,8 +36,8 @@ test('enrol TOTP, get challenged at login, and pass it', async ({ page }) => {
 
 	// Pass the challenge with a fresh code. The challenge field is name="code";
 	// use the real authenticate button, not a per-method switcher form.
-	await page.fill('#easy2fa-challenge-form input[name="code"]', totp(secret));
-	await page.locator('#easy2fa-authenticate').click();
+	await page.fill('#sigil-challenge-form input[name="code"]', totp(secret));
+	await page.locator('#sigil-authenticate').click();
 	await page.waitForLoadState('networkidle');
 
 	// Now admin is reachable.

@@ -2,7 +2,7 @@
 	'use strict';
 
 	function cfg() {
-		return window.easy2faPasskey || {};
+		return window.sigilPasskey || {};
 	}
 
 	function i18n(key) {
@@ -11,7 +11,7 @@
 	}
 
 	function setStatus(root, message) {
-		var el = root.querySelector('.easy2fa-passkey-status');
+		var el = root.querySelector('.sigil-passkey-status');
 		if (el) {
 			el.textContent = message || '';
 		}
@@ -131,7 +131,7 @@
 
 		setStatus(root, i18n('registering'));
 
-		postForm('easy2fa_passkey_register_options', {})
+		postForm('sigil_passkey_register_options', {})
 			.then(function (json) {
 				if (!json || !json.success) {
 					throw new Error((json && json.data && json.data.message) || i18n('failed'));
@@ -145,12 +145,12 @@
 				if (!cred || !cred.response) {
 					throw new Error(i18n('failed'));
 				}
-				var labelInput = root.querySelector('#easy2fa-passkey-label');
+				var labelInput = root.querySelector('#sigil-passkey-label');
 				var transports = [];
 				if (typeof cred.response.getTransports === 'function') {
 					transports = cred.response.getTransports() || [];
 				}
-				return postForm('easy2fa_passkey_register', {
+				return postForm('sigil_passkey_register', {
 					clientDataJSON: bufferToBase64Url(cred.response.clientDataJSON),
 					attestationObject: bufferToBase64Url(cred.response.attestationObject),
 					label: labelInput ? labelInput.value : '',
@@ -162,7 +162,7 @@
 					throw new Error((json && json.data && json.data.message) || i18n('failed'));
 				}
 				setStatus(root, (json.data && json.data.message) || i18n('registered'));
-				root.dispatchEvent(new window.CustomEvent('easy2fa:passkey-registered', { bubbles: true }));
+				root.dispatchEvent(new window.CustomEvent('sigil:passkey-registered', { bubbles: true }));
 			})
 			.catch(function (err) {
 				setStatus(root, (err && err.message) || i18n('failed'));
@@ -177,7 +177,7 @@
 
 		setStatus(root, i18n('authenticating'));
 
-		postForm('easy2fa_passkey_auth_options', {})
+		postForm('sigil_passkey_auth_options', {})
 			.then(function (json) {
 				if (!json || !json.success) {
 					throw new Error((json && json.data && json.data.message) || i18n('failed'));
@@ -196,18 +196,18 @@
 					authenticatorData: bufferToBase64Url(cred.response.authenticatorData),
 					signature: bufferToBase64Url(cred.response.signature)
 				};
-				var hidden = root.querySelector('#easy2fa-passkey-assertion');
+				var hidden = root.querySelector('#sigil-passkey-assertion');
 				if (hidden) {
 					hidden.value = JSON.stringify(payload);
 				}
-				return postForm('easy2fa_passkey_auth', payload);
+				return postForm('sigil_passkey_auth', payload);
 			})
 			.then(function (json) {
 				if (!json || !json.success) {
 					throw new Error((json && json.data && json.data.message) || i18n('failed'));
 				}
 				setStatus(root, (json.data && json.data.message) || '');
-				root.dispatchEvent(new window.CustomEvent('easy2fa:passkey-authenticated', { bubbles: true }));
+				root.dispatchEvent(new window.CustomEvent('sigil:passkey-authenticated', { bubbles: true }));
 			})
 			.catch(function (err) {
 				setStatus(root, (err && err.message) || i18n('failed'));
@@ -219,15 +219,15 @@
 		if (!(target instanceof Element)) {
 			return;
 		}
-		var regBtn = target.closest('.easy2fa-passkey-register');
+		var regBtn = target.closest('.sigil-passkey-register');
 		if (regBtn) {
-			var regRoot = regBtn.closest('.easy2fa-passkey-enrol') || document;
+			var regRoot = regBtn.closest('.sigil-passkey-enrol') || document;
 			register(regRoot);
 			return;
 		}
-		var authBtn = target.closest('.easy2fa-passkey-authenticate');
+		var authBtn = target.closest('.sigil-passkey-authenticate');
 		if (authBtn) {
-			var authRoot = authBtn.closest('.easy2fa-passkey-challenge') || document;
+			var authRoot = authBtn.closest('.sigil-passkey-challenge') || document;
 			authenticate(authRoot);
 		}
 	}

@@ -2,7 +2,7 @@
 
 declare( strict_types=1 );
 
-namespace Easy2FA;
+namespace Sigil;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -54,12 +54,12 @@ final class Crypto {
 	}
 
 	private static function key(): string {
-		if ( defined( 'EASY2FA_KEY' ) && is_string( EASY2FA_KEY ) && '' !== EASY2FA_KEY ) {
-			return hash( 'sha256', EASY2FA_KEY, true );
+		if ( defined( 'SIGIL_KEY' ) && is_string( SIGIL_KEY ) && '' !== SIGIL_KEY ) {
+			return hash( 'sha256', SIGIL_KEY, true );
 		}
 
 		$material = ( defined( 'AUTH_SALT' ) ? AUTH_SALT : '' ) . ( defined( 'SECURE_AUTH_SALT' ) ? SECURE_AUTH_SALT : '' );
-		return hash_hkdf( 'sha256', $material, 32, 'easy2fa' );
+		return hash_hkdf( 'sha256', $material, 32, 'sigil' );
 	}
 
 	private static function decrypt_sodium( string $payload, string $key ): string {

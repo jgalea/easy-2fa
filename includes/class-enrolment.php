@@ -2,13 +2,13 @@
 
 declare( strict_types=1 );
 
-namespace Easy2FA;
+namespace Sigil;
 
 defined( 'ABSPATH' ) || exit;
 
 final class Enrolment {
 
-	public const PAGE_SLUG = 'easy-2fa-setup';
+	public const PAGE_SLUG = 'sigil-2fa-setup';
 
 	private static ?Enrolment $instance = null;
 
@@ -22,17 +22,17 @@ final class Enrolment {
 	private function __construct() {
 		add_action( 'admin_menu', array( $this, 'register_menu' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
-		add_action( 'admin_post_easy2fa_enrol', array( $this, 'handle_enrol_post' ) );
-		add_action( 'admin_post_easy2fa_remove_method', array( $this, 'handle_remove_post' ) );
-		add_action( 'admin_post_easy2fa_regenerate_backup', array( $this, 'handle_regenerate_backup_post' ) );
+		add_action( 'admin_post_sigil_enrol', array( $this, 'handle_enrol_post' ) );
+		add_action( 'admin_post_sigil_remove_method', array( $this, 'handle_remove_post' ) );
+		add_action( 'admin_post_sigil_regenerate_backup', array( $this, 'handle_regenerate_backup_post' ) );
 		add_action( 'show_user_profile', array( $this, 'render_profile_section' ) );
 		add_action( 'edit_user_profile', array( $this, 'render_profile_section' ) );
 	}
 
 	public function register_menu(): void {
 		add_users_page(
-			__( 'Two-Factor Authentication', 'easy-2fa' ),
-			__( 'Two-Factor Auth', 'easy-2fa' ),
+			__( 'Two-Factor Authentication', 'sigil-2fa' ),
+			__( 'Two-Factor Auth', 'sigil-2fa' ),
 			'read',
 			self::PAGE_SLUG,
 			array( $this, 'render_setup_page' )
@@ -58,17 +58,17 @@ final class Enrolment {
 		}
 
 		wp_enqueue_style(
-			'easy2fa-admin',
-			EASY2FA_URL . 'assets/css/admin.css',
+			'sigil-admin',
+			SIGIL_URL . 'assets/css/admin.css',
 			array(),
-			EASY2FA_VERSION
+			SIGIL_VERSION
 		);
 
 		wp_enqueue_script(
-			'easy2fa-enrol',
-			EASY2FA_URL . 'assets/js/enrol.js',
+			'sigil-enrol',
+			SIGIL_URL . 'assets/js/enrol.js',
 			array(),
-			EASY2FA_VERSION,
+			SIGIL_VERSION,
 			true
 		);
 	}
@@ -76,7 +76,7 @@ final class Enrolment {
 	public function render_setup_page(): void {
 		$user_id = (int) get_current_user_id();
 		if ( $user_id <= 0 || ! current_user_can( 'read' ) ) {
-			wp_die( esc_html__( 'You do not have permission to access this page.', 'easy-2fa' ) );
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'sigil-2fa' ) );
 		}
 
 		$this->render_enrol_ui( $user_id, true );
@@ -95,7 +95,7 @@ final class Enrolment {
 			return;
 		}
 
-		echo '<h2>' . esc_html__( 'Two-Factor Authentication', 'easy-2fa' ) . '</h2>';
+		echo '<h2>' . esc_html__( 'Two-Factor Authentication', 'sigil-2fa' ) . '</h2>';
 		$this->render_enrol_ui( $user_id, false );
 	}
 
@@ -109,24 +109,24 @@ final class Enrolment {
 	public function complete_method( int $user_id, string $provider_id, array $input ) {
 		if ( ! $this->can_manage_methods( $user_id ) ) {
 			return new \WP_Error(
-				'easy2fa_forbidden',
-				__( 'You are not allowed to change two-factor methods for this user.', 'easy-2fa' )
+				'sigil_forbidden',
+				__( 'You are not allowed to change two-factor methods for this user.', 'sigil-2fa' )
 			);
 		}
 
 		$provider_id = sanitize_key( $provider_id );
 		if ( '' === $provider_id ) {
 			return new \WP_Error(
-				'easy2fa_unknown_provider',
-				__( 'Unknown authentication method.', 'easy-2fa' )
+				'sigil_unknown_provider',
+				__( 'Unknown authentication method.', 'sigil-2fa' )
 			);
 		}
 
 		$provider = Providers::instance()->get( $provider_id );
 		if ( null === $provider ) {
 			return new \WP_Error(
-				'easy2fa_unknown_provider',
-				__( 'Unknown authentication method.', 'easy-2fa' )
+				'sigil_unknown_provider',
+				__( 'Unknown authentication method.', 'sigil-2fa' )
 			);
 		}
 
@@ -154,7 +154,7 @@ final class Enrolment {
 		 *
 		 * @param int $user_id
 		 */
-		do_action( 'easy2fa_methods_changed', $user_id );
+		do_action( 'sigil_methods_changed', $user_id );
 
 		return true;
 	}
@@ -165,24 +165,24 @@ final class Enrolment {
 	public function remove_method( int $user_id, string $provider_id ) {
 		if ( ! $this->can_manage_methods( $user_id ) ) {
 			return new \WP_Error(
-				'easy2fa_forbidden',
-				__( 'You are not allowed to change two-factor methods for this user.', 'easy-2fa' )
+				'sigil_forbidden',
+				__( 'You are not allowed to change two-factor methods for this user.', 'sigil-2fa' )
 			);
 		}
 
 		$provider_id = sanitize_key( $provider_id );
 		if ( '' === $provider_id ) {
 			return new \WP_Error(
-				'easy2fa_unknown_provider',
-				__( 'Unknown authentication method.', 'easy-2fa' )
+				'sigil_unknown_provider',
+				__( 'Unknown authentication method.', 'sigil-2fa' )
 			);
 		}
 
 		$methods = Store::methods( $user_id );
 		if ( ! isset( $methods[ $provider_id ] ) ) {
 			return new \WP_Error(
-				'easy2fa_not_enrolled',
-				__( 'That authentication method is not set up.', 'easy-2fa' )
+				'sigil_not_enrolled',
+				__( 'That authentication method is not set up.', 'sigil-2fa' )
 			);
 		}
 
@@ -191,8 +191,8 @@ final class Enrolment {
 
 		if ( array() === $remaining && Policy::required_for( $user_id ) ) {
 			return new \WP_Error(
-				'easy2fa_last_method',
-				__( 'You cannot remove your last authentication method while two-factor authentication is required.', 'easy-2fa' )
+				'sigil_last_method',
+				__( 'You cannot remove your last authentication method while two-factor authentication is required.', 'sigil-2fa' )
 			);
 		}
 
@@ -203,7 +203,7 @@ final class Enrolment {
 			Store::remove_method( $user_id, $provider_id );
 		}
 
-		do_action( 'easy2fa_methods_changed', $user_id );
+		do_action( 'sigil_methods_changed', $user_id );
 
 		return true;
 	}
@@ -211,10 +211,10 @@ final class Enrolment {
 	public function handle_enrol_post(): void {
 		$user_id = isset( $_POST['user_id'] ) ? absint( wp_unslash( $_POST['user_id'] ) ) : (int) get_current_user_id();
 
-		check_admin_referer( 'easy2fa_enrol_' . $user_id );
+		check_admin_referer( 'sigil_enrol_' . $user_id );
 
 		if ( ! $this->can_manage_methods( $user_id ) ) {
-			wp_die( esc_html__( 'You are not allowed to change two-factor methods for this user.', 'easy-2fa' ), '', array( 'response' => 403 ) );
+			wp_die( esc_html__( 'You are not allowed to change two-factor methods for this user.', 'sigil-2fa' ), '', array( 'response' => 403 ) );
 		}
 
 		$provider_id = isset( $_POST['provider'] ) ? sanitize_key( wp_unslash( (string) $_POST['provider'] ) ) : '';
@@ -243,10 +243,10 @@ final class Enrolment {
 		$user_id = isset( $_POST['user_id'] ) ? absint( wp_unslash( $_POST['user_id'] ) ) : 0;
 		$provider_id = isset( $_POST['provider'] ) ? sanitize_key( wp_unslash( (string) $_POST['provider'] ) ) : '';
 
-		check_admin_referer( 'easy2fa_remove_' . $user_id . '_' . $provider_id );
+		check_admin_referer( 'sigil_remove_' . $user_id . '_' . $provider_id );
 
 		if ( ! $this->can_manage_methods( $user_id ) ) {
-			wp_die( esc_html__( 'You are not allowed to change two-factor methods for this user.', 'easy-2fa' ), '', array( 'response' => 403 ) );
+			wp_die( esc_html__( 'You are not allowed to change two-factor methods for this user.', 'sigil-2fa' ), '', array( 'response' => 403 ) );
 		}
 
 		$result = $this->remove_method( $user_id, $provider_id );
@@ -260,10 +260,10 @@ final class Enrolment {
 	public function handle_regenerate_backup_post(): void {
 		$user_id = isset( $_POST['user_id'] ) ? absint( wp_unslash( $_POST['user_id'] ) ) : 0;
 
-		check_admin_referer( 'easy2fa_regenerate_backup_' . $user_id );
+		check_admin_referer( 'sigil_regenerate_backup_' . $user_id );
 
 		if ( ! $this->can_manage_methods( $user_id ) ) {
-			wp_die( esc_html__( 'You are not allowed to change two-factor methods for this user.', 'easy-2fa' ), '', array( 'response' => 403 ) );
+			wp_die( esc_html__( 'You are not allowed to change two-factor methods for this user.', 'sigil-2fa' ), '', array( 'response' => 403 ) );
 		}
 
 		$backup = Providers::instance()->get( 'backup' );
@@ -313,7 +313,7 @@ final class Enrolment {
 	 * @param array<string, mixed> $input
 	 */
 	private function input_requires_provider_validation( array $input ): bool {
-		if ( array_key_exists( 'code', $input ) || array_key_exists( 'easy2fa_totp_code', $input ) ) {
+		if ( array_key_exists( 'code', $input ) || array_key_exists( 'sigil_totp_code', $input ) ) {
 			return true;
 		}
 		if ( array_key_exists( 'clientDataJSON', $input ) || array_key_exists( 'attestationObject', $input ) ) {
@@ -332,8 +332,8 @@ final class Enrolment {
 		switch ( $provider_id ) {
 			case 'totp':
 				return array(
-					'secret' => isset( $post['easy2fa_totp_secret'] ) ? (string) $post['easy2fa_totp_secret'] : '',
-					'code'   => isset( $post['easy2fa_totp_code'] ) ? (string) $post['easy2fa_totp_code'] : '',
+					'secret' => isset( $post['sigil_totp_secret'] ) ? (string) $post['sigil_totp_secret'] : '',
+					'code'   => isset( $post['sigil_totp_code'] ) ? (string) $post['sigil_totp_code'] : '',
 				);
 			case 'email':
 				return array();
@@ -343,7 +343,7 @@ final class Enrolment {
 				return array(
 					'clientDataJSON'    => isset( $post['clientDataJSON'] ) ? (string) $post['clientDataJSON'] : '',
 					'attestationObject' => isset( $post['attestationObject'] ) ? (string) $post['attestationObject'] : '',
-					'label'             => isset( $post['easy2fa_passkey_label'] ) ? (string) $post['easy2fa_passkey_label'] : '',
+					'label'             => isset( $post['sigil_passkey_label'] ) ? (string) $post['sigil_passkey_label'] : '',
 					'transports'        => isset( $post['transports'] ) ? $post['transports'] : '',
 				);
 			default:
@@ -371,7 +371,7 @@ final class Enrolment {
 			$active = $this->default_method_tab( $providers, $methods );
 		}
 
-		require EASY2FA_DIR . 'templates/enrol.php';
+		require SIGIL_DIR . 'templates/enrol.php';
 	}
 
 	/**
@@ -395,11 +395,11 @@ final class Enrolment {
 	 */
 	private function consume_notices(): array {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display-only status after redirect.
-		$type = isset( $_GET['easy2fa_status'] ) ? sanitize_key( wp_unslash( (string) $_GET['easy2fa_status'] ) ) : '';
+		$type = isset( $_GET['sigil_status'] ) ? sanitize_key( wp_unslash( (string) $_GET['sigil_status'] ) ) : '';
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$code = isset( $_GET['easy2fa_code'] ) ? sanitize_key( wp_unslash( (string) $_GET['easy2fa_code'] ) ) : '';
+		$code = isset( $_GET['sigil_code'] ) ? sanitize_key( wp_unslash( (string) $_GET['sigil_code'] ) ) : '';
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$message = isset( $_GET['easy2fa_msg'] ) ? sanitize_text_field( wp_unslash( (string) $_GET['easy2fa_msg'] ) ) : '';
+		$message = isset( $_GET['sigil_msg'] ) ? sanitize_text_field( wp_unslash( (string) $_GET['sigil_msg'] ) ) : '';
 
 		return array(
 			'type'    => $type,
@@ -411,12 +411,12 @@ final class Enrolment {
 	private function redirect_with_status( int $user_id, string $status, string $code, string $message = '', string $provider_id = '' ): void {
 		$current = (int) get_current_user_id();
 		$args    = array(
-			'easy2fa_status' => $status,
-			'easy2fa_code'   => $code,
+			'sigil_status' => $status,
+			'sigil_code'   => $code,
 		);
 
 		if ( '' !== $message ) {
-			$args['easy2fa_msg'] = $message;
+			$args['sigil_msg'] = $message;
 		}
 		if ( '' !== $provider_id ) {
 			$args['method'] = $provider_id;

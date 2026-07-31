@@ -11,15 +11,15 @@ test.beforeEach(reset);
 // A locked-out user must be able to get back in. This is the make-or-break flow.
 test('backup code gets you in when the authenticator is gone, and CLI reset clears 2FA', async ({ page }) => {
 	await login(page);
-	await page.goto('/wp-admin/users.php?page=easy-2fa-setup&method=totp');
-	const secret = await page.locator('input[name="easy2fa_totp_secret"]').inputValue();
-	await page.fill('input[name="easy2fa_totp_code"]', totp(secret));
+	await page.goto('/wp-admin/users.php?page=sigil-2fa-setup&method=totp');
+	const secret = await page.locator('input[name="sigil_totp_secret"]').inputValue();
+	await page.fill('input[name="sigil_totp_code"]', totp(secret));
 	await page.locator('button[type="submit"], input[type="submit"]').filter({ hasText: /enrol|enable|verify|confirm|save/i }).first().click();
 
 	// Capture a backup code from the one-time display. Codes are 8 chars from
 	// the alphabet 23456789A-Z (no 0/O/1/I), rendered as <li><code>.
-	await expect(page.locator('.easy2fa-backup-codes-list code').first()).toBeVisible();
-	const codes = await page.locator('.easy2fa-backup-codes-list code').allInnerTexts();
+	await expect(page.locator('.sigil-backup-codes-list code').first()).toBeVisible();
+	const codes = await page.locator('.sigil-backup-codes-list code').allInnerTexts();
 	const backup = codes.map((c) => c.trim()).find((c) => /^[A-HJ-NP-Z2-9]{8}$/.test(c));
 	expect(backup, 'a backup code should be shown').toBeTruthy();
 
@@ -28,10 +28,10 @@ test('backup code gets you in when the authenticator is gone, and CLI reset clea
 	// Log in, switch to the backup-code method, and use one.
 	await login(page);
 	await expect(page.locator('body')).toContainText(/verification|authenticator/i);
-	const switcher = page.locator('form.easy2fa-challenge__method-form button', { hasText: /backup/i });
+	const switcher = page.locator('form.sigil-challenge__method-form button', { hasText: /backup/i });
 	if (await switcher.count()) await switcher.first().click();
-	await page.fill('#easy2fa-challenge-form input[name="code"]', backup!.replace(/\s/g, ''));
-	await page.locator('#easy2fa-authenticate').click();
+	await page.fill('#sigil-challenge-form input[name="code"]', backup!.replace(/\s/g, ''));
+	await page.locator('#sigil-authenticate').click();
 	await page.waitForLoadState('networkidle');
 	await page.goto('/wp-admin/');
 	await expect(page.locator('#wpadminbar')).toBeVisible();

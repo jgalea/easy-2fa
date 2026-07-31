@@ -2,7 +2,7 @@
 
 declare( strict_types=1 );
 
-namespace Easy2FA;
+namespace Sigil;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -27,7 +27,7 @@ final class Users_Column {
 	 * @return array<string, string>
 	 */
 	public function add_column( array $columns ): array {
-		$columns['easy2fa'] = __( '2FA', 'easy-2fa' );
+		$columns['sigil'] = __( '2FA', 'sigil-2fa' );
 		return $columns;
 	}
 
@@ -37,7 +37,7 @@ final class Users_Column {
 	 * @param int    $user_id     User ID.
 	 */
 	public function render_column( $output, $column_name, $user_id ): string {
-		if ( 'easy2fa' !== $column_name ) {
+		if ( 'sigil' !== $column_name ) {
 			return (string) $output;
 		}
 
@@ -53,12 +53,12 @@ final class Users_Column {
 		}
 
 		if ( ! Policy::required_for( $user_id ) ) {
-			return esc_html__( 'Not set up', 'easy-2fa' );
+			return esc_html__( 'Not set up', 'sigil-2fa' );
 		}
 
 		$deadline = Policy::deadline_for( $user_id );
 		if ( null === $deadline ) {
-			return esc_html__( 'Not set up', 'easy-2fa' );
+			return esc_html__( 'Not set up', 'sigil-2fa' );
 		}
 
 		$formatted = wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $deadline );
@@ -69,7 +69,7 @@ final class Users_Column {
 		return esc_html(
 			sprintf(
 				/* translators: %s: local deadline date/time */
-				__( 'Not set up (due %s)', 'easy-2fa' ),
+				__( 'Not set up (due %s)', 'sigil-2fa' ),
 				$formatted
 			)
 		);

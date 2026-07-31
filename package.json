@@ -1,5 +1,5 @@
 {
-  "name": "easy-2fa-dev",
+  "name": "sigil-2fa-dev",
   "private": true,
   "devDependencies": {
     "@playwright/test": "^1.62.0"

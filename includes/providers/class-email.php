@@ -2,10 +2,10 @@
 
 declare( strict_types=1 );
 
-namespace Easy2FA\Providers;
+namespace Sigil\Providers;
 
-use Easy2FA\Provider;
-use Easy2FA\Store;
+use Sigil\Provider;
+use Sigil\Store;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -13,17 +13,17 @@ final class Email implements Provider {
 
 	private const CODE_TTL       = 600;
 	private const RESEND_COOLDOWN = 60;
-	private const TRANSIENT_KEY  = 'easy2fa_email_';
-	private const COOLDOWN_KEY   = 'easy2fa_email_cd_';
+	private const TRANSIENT_KEY  = 'sigil_email_';
+	private const COOLDOWN_KEY   = 'sigil_email_cd_';
 	// Test-only plaintext mirror key. See send_code() for write conditions.
-	private const DEBUG_META     = '_easy2fa_email_debug_code';
+	private const DEBUG_META     = '_sigil_email_debug_code';
 
 	public function id(): string {
 		return 'email';
 	}
 
 	public function label(): string {
-		return __( 'Email code', 'easy-2fa' );
+		return __( 'Email code', 'sigil-2fa' );
 	}
 
 	public function priority(): int {
@@ -42,12 +42,12 @@ final class Email implements Provider {
 	public function render_enrol( int $user_id ): void {
 		$user = get_userdata( $user_id );
 		$email = $user instanceof \WP_User ? $user->user_email : '';
-		echo '<p>' . esc_html__( 'We will send a six-digit code to your account email when you sign in.', 'easy-2fa' ) . '</p>';
+		echo '<p>' . esc_html__( 'We will send a six-digit code to your account email when you sign in.', 'sigil-2fa' ) . '</p>';
 		if ( '' !== $email ) {
 			echo '<p>' . esc_html(
 				sprintf(
 					/* translators: %s: user email address */
-					__( 'Codes go to: %s', 'easy-2fa' ),
+					__( 'Codes go to: %s', 'sigil-2fa' ),
 					$email
 				)
 			) . '</p>';
@@ -62,8 +62,8 @@ final class Email implements Provider {
 		$user = get_userdata( $user_id );
 		if ( ! $user instanceof \WP_User || ! is_email( $user->user_email ) ) {
 			return new \WP_Error(
-				'easy2fa_email_missing',
-				__( 'Your account needs a valid email address to use email codes.', 'easy-2fa' )
+				'sigil_email_missing',
+				__( 'Your account needs a valid email address to use email codes.', 'sigil-2fa' )
 			);
 		}
 
@@ -79,9 +79,9 @@ final class Email implements Provider {
 	}
 
 	public function render_challenge( int $user_id ): void {
-		echo '<p>' . esc_html__( 'Enter the six-digit code we sent to your email.', 'easy-2fa' ) . '</p>';
-		echo '<p><label for="easy2fa-email-code">' . esc_html__( 'Email code', 'easy-2fa' ) . '</label> ';
-		echo '<input type="text" name="code" id="easy2fa-email-code" inputmode="numeric" pattern="[0-9]{6}" autocomplete="one-time-code" maxlength="6" required /></p>';
+		echo '<p>' . esc_html__( 'Enter the six-digit code we sent to your email.', 'sigil-2fa' ) . '</p>';
+		echo '<p><label for="sigil-email-code">' . esc_html__( 'Email code', 'sigil-2fa' ) . '</label> ';
+		echo '<input type="text" name="code" id="sigil-email-code" inputmode="numeric" pattern="[0-9]{6}" autocomplete="one-time-code" maxlength="6" required /></p>';
 	}
 
 	/**
@@ -158,7 +158,7 @@ final class Email implements Provider {
 
 		$subject = sprintf(
 			/* translators: %s: site name */
-			__( 'Your login code for %s', 'easy-2fa' ),
+			__( 'Your login code for %s', 'sigil-2fa' ),
 			$site_name
 		);
 
@@ -166,7 +166,7 @@ final class Email implements Provider {
 			/* translators: 1: site name, 2: six-digit code */
 			__(
 				"Someone is trying to sign in to %1\$s.\n\nYour one-time code is: %2\$s\n\nThis code expires in ten minutes and can only be used once.\n\nNobody from %1\$s will ever ask you for this code. If you did not try to sign in, you can ignore this email.",
-				'easy-2fa'
+				'sigil-2fa'
 			),
 			$site_name,
 			$code

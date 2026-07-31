@@ -2,14 +2,14 @@
 
 declare( strict_types=1 );
 
-namespace Easy2FA;
+namespace Sigil;
 
 defined( 'ABSPATH' ) || exit;
 
 final class Policy {
 
-	public const OPTION_KEY   = 'easy2fa_policy';
-	public const DEADLINE_META = '_easy2fa_deadline';
+	public const OPTION_KEY   = 'sigil_policy';
+	public const DEADLINE_META = '_sigil_deadline';
 
 	/**
 	 * @return array{

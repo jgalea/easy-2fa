@@ -2,12 +2,12 @@
 
 declare( strict_types=1 );
 
-namespace Easy2FA;
+namespace Sigil;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * WP-CLI commands under `wp 2fa`.
+ * WP-CLI commands under `wp sigil`.
  *
  * Registered only when WP-CLI is present. reset skips capability checks because
  * shell access already implies full control of the site.
@@ -21,7 +21,7 @@ final class CLI {
 			self::$instance = new self();
 			if ( defined( 'WP_CLI' ) && WP_CLI ) {
 				// Pass the instance: WP-CLI cannot construct a private-constructor class.
-				\WP_CLI::add_command( '2fa', self::$instance );
+				\WP_CLI::add_command( 'sigil', self::$instance );
 			}
 		}
 		return self::$instance;
@@ -40,8 +40,8 @@ final class CLI {
 	 *
 	 * ## EXAMPLES
 	 *
-	 *     wp 2fa reset 12
-	 *     wp 2fa reset admin
+	 *     wp sigil reset 12
+	 *     wp sigil reset admin
 	 *
 	 * @param list<string>             $args
 	 * @param array<string, string|bool> $assoc_args
@@ -76,8 +76,8 @@ final class CLI {
 	 *
 	 * ## EXAMPLES
 	 *
-	 *     wp 2fa status
-	 *     wp 2fa status admin
+	 *     wp sigil status
+	 *     wp sigil status admin
 	 *
 	 * @param list<string>               $args
 	 * @param array<string, string|bool> $assoc_args
@@ -111,7 +111,7 @@ final class CLI {
 	 *
 	 * ## EXAMPLES
 	 *
-	 *     wp 2fa list
+	 *     wp sigil list
 	 *
 	 * @param list<string>               $args
 	 * @param array<string, string|bool> $assoc_args
@@ -163,7 +163,7 @@ final class CLI {
 			}
 		}
 
-		require_once EASY2FA_DIR . 'includes/class-credentials.php';
+		require_once SIGIL_DIR . 'includes/class-credentials.php';
 		if ( [] !== Credentials::for_user( $user_id ) && ! in_array( 'passkey', $labels, true ) ) {
 			$labels[] = 'passkey';
 		}

@@ -1,5 +1,5 @@
 {
-	"name": "rebelcode/easy-2fa",
+	"name": "rebelcode/sigil-2fa",
 	"description": "Two-factor authentication for WordPress with passkeys, TOTP, backup codes and email codes.",
 	"type": "wordpress-plugin",
 	"license": "GPL-3.0-or-later",

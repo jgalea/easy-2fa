@@ -2,11 +2,11 @@
 
 declare( strict_types=1 );
 
-namespace Easy2FA\Providers;
+namespace Sigil\Providers;
 
-use Easy2FA\Crypto;
-use Easy2FA\Provider;
-use Easy2FA\Store;
+use Sigil\Crypto;
+use Sigil\Provider;
+use Sigil\Store;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -25,7 +25,7 @@ final class TOTP implements Provider {
 	}
 
 	public function label(): string {
-		return __( 'Authenticator app', 'easy-2fa' );
+		return __( 'Authenticator app', 'sigil-2fa' );
 	}
 
 	public function priority(): int {
@@ -57,15 +57,15 @@ final class TOTP implements Provider {
 		$issuer = rawurlencode( $site );
 		$uri    = 'otpauth://totp/' . $label . '?secret=' . rawurlencode( $secret ) . '&issuer=' . $issuer;
 
-		echo '<div class="easy2fa-totp-enrol">';
-		echo '<p><label for="easy2fa-totp-secret">' . esc_html__( 'Secret key', 'easy-2fa' ) . '</label> ';
-		echo '<code id="easy2fa-totp-secret">' . esc_html( $secret ) . '</code></p>';
-		echo '<p><label for="easy2fa-totp-uri">' . esc_html__( 'Provisioning URI', 'easy-2fa' ) . '</label> ';
-		echo '<code id="easy2fa-totp-uri">' . esc_html( $uri ) . '</code></p>';
-		echo '<div class="easy2fa-totp-qr" data-otpauth="' . esc_attr( $uri ) . '"></div>';
-		echo '<input type="hidden" name="easy2fa_totp_secret" value="' . esc_attr( $secret ) . '" />';
-		echo '<p><label for="easy2fa-totp-code">' . esc_html__( 'Verification code', 'easy-2fa' ) . '</label> ';
-		echo '<input type="text" name="easy2fa_totp_code" id="easy2fa-totp-code" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" maxlength="6" /></p>';
+		echo '<div class="sigil-totp-enrol">';
+		echo '<p><label for="sigil-totp-secret">' . esc_html__( 'Secret key', 'sigil-2fa' ) . '</label> ';
+		echo '<code id="sigil-totp-secret">' . esc_html( $secret ) . '</code></p>';
+		echo '<p><label for="sigil-totp-uri">' . esc_html__( 'Provisioning URI', 'sigil-2fa' ) . '</label> ';
+		echo '<code id="sigil-totp-uri">' . esc_html( $uri ) . '</code></p>';
+		echo '<div class="sigil-totp-qr" data-otpauth="' . esc_attr( $uri ) . '"></div>';
+		echo '<input type="hidden" name="sigil_totp_secret" value="' . esc_attr( $secret ) . '" />';
+		echo '<p><label for="sigil-totp-code">' . esc_html__( 'Verification code', 'sigil-2fa' ) . '</label> ';
+		echo '<input type="text" name="sigil_totp_code" id="sigil-totp-code" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" maxlength="6" /></p>';
 		echo '</div>';
 	}
 
@@ -82,30 +82,30 @@ final class TOTP implements Provider {
 
 		if ( ! preg_match( '/^[A-Z2-7]+$/', $secret ) || strlen( self::base32_decode( $secret ) ) < self::MIN_SECRET_BYTES ) {
 			return new \WP_Error(
-				'easy2fa_invalid_secret',
-				__( 'Invalid authenticator secret.', 'easy-2fa' )
+				'sigil_invalid_secret',
+				__( 'Invalid authenticator secret.', 'sigil-2fa' )
 			);
 		}
 
 		if ( ! preg_match( '/^\d{6}$/', $code ) ) {
 			return new \WP_Error(
-				'easy2fa_invalid_code',
-				__( 'Enter the 6-digit code from your authenticator app.', 'easy-2fa' )
+				'sigil_invalid_code',
+				__( 'Enter the 6-digit code from your authenticator app.', 'sigil-2fa' )
 			);
 		}
 
 		if ( ! $this->code_valid_for_secret( $secret, $code, time() ) ) {
 			return new \WP_Error(
-				'easy2fa_invalid_code',
-				__( 'That code did not match. Check the time on your device and try again.', 'easy-2fa' )
+				'sigil_invalid_code',
+				__( 'That code did not match. Check the time on your device and try again.', 'sigil-2fa' )
 			);
 		}
 
 		$encrypted = Crypto::encrypt( $secret );
 		if ( '' === $encrypted ) {
 			return new \WP_Error(
-				'easy2fa_encrypt_failed',
-				__( 'Could not store the authenticator secret.', 'easy-2fa' )
+				'sigil_encrypt_failed',
+				__( 'Could not store the authenticator secret.', 'sigil-2fa' )
 			);
 		}
 
@@ -125,8 +125,8 @@ final class TOTP implements Provider {
 		// Field name is "code" to match what validate() reads and what the backup
 		// and email providers already use. The challenge handler passes raw POST
 		// straight through, so a mismatch here silently fails every login.
-		echo '<p><label for="easy2fa-totp-challenge">' . esc_html__( 'Authenticator code', 'easy-2fa' ) . '</label> ';
-		echo '<input type="text" name="code" id="easy2fa-totp-challenge" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" maxlength="6" /></p>';
+		echo '<p><label for="sigil-totp-challenge">' . esc_html__( 'Authenticator code', 'sigil-2fa' ) . '</label> ';
+		echo '<input type="text" name="code" id="sigil-totp-challenge" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" maxlength="6" /></p>';
 	}
 
 	/**

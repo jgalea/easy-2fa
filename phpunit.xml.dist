@@ -8,7 +8,7 @@
 	convertWarningsToExceptions="true"
 >
 	<testsuites>
-		<testsuite name="easy-2fa">
+		<testsuite name="sigil-2fa">
 			<directory prefix="test-" suffix=".php">./tests/</directory>
 		</testsuite>
 	</testsuites>

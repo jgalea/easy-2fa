@@ -1,16 +1,16 @@
-.easy2fa-enrol {
+.sigil-enrol {
 	max-width: 720px;
 }
 
-.easy2fa-enrol__intro {
+.sigil-enrol__intro {
 	margin-bottom: 1.25em;
 }
 
-.easy2fa-enrol__status {
+.sigil-enrol__status {
 	margin: 1em 0;
 }
 
-.easy2fa-enrol__tabs ul {
+.sigil-enrol__tabs ul {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 0.35rem;
@@ -20,7 +20,7 @@
 	border-bottom: 1px solid #c3c4c7;
 }
 
-.easy2fa-enrol__tab {
+.sigil-enrol__tab {
 	display: inline-flex;
 	align-items: center;
 	gap: 0.4rem;
@@ -33,20 +33,20 @@
 	margin-bottom: -1px;
 }
 
-.easy2fa-enrol__tab:hover,
-.easy2fa-enrol__tab:focus {
+.sigil-enrol__tab:hover,
+.sigil-enrol__tab:focus {
 	color: #1d2327;
 	background: #f6f7f7;
 }
 
-.easy2fa-enrol__tab.is-active {
+.sigil-enrol__tab.is-active {
 	background: #fff;
 	border-color: #c3c4c7;
 	border-bottom-color: #fff;
 	font-weight: 600;
 }
 
-.easy2fa-enrol__badge {
+.sigil-enrol__badge {
 	display: inline-block;
 	padding: 0.1rem 0.4rem;
 	font-size: 11px;
@@ -59,23 +59,23 @@
 	border-radius: 3px;
 }
 
-.easy2fa-enrol__panel {
+.sigil-enrol__panel {
 	background: #fff;
 	border: 1px solid #c3c4c7;
 	border-radius: 0 4px 4px 4px;
 	padding: 1rem 1.25rem 1.25rem;
 }
 
-.easy2fa-enrol__panel h3 {
+.sigil-enrol__panel h3 {
 	margin-top: 0;
 }
 
-.easy2fa-enrol__backup-once {
+.sigil-enrol__backup-once {
 	padding: 12px 16px;
 	margin: 1em 0;
 }
 
-.easy2fa-backup-codes-list {
+.sigil-backup-codes-list {
 	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 	font-size: 14px;
 	columns: 2;
@@ -83,29 +83,29 @@
 	margin: 0.75em 0;
 }
 
-.easy2fa-backup-codes-list li {
+.sigil-backup-codes-list li {
 	margin: 0.25em 0;
 }
 
-.easy2fa-totp-enrol code {
+.sigil-totp-enrol code {
 	display: inline-block;
 	word-break: break-all;
 	padding: 0.2em 0.4em;
 	background: #f0f0f1;
 }
 
-.easy2fa-totp-qr {
+.sigil-totp-qr {
 	margin: 1em 0;
 	min-height: 180px;
 }
 
-.easy2fa-totp-qr canvas,
-.easy2fa-totp-qr img {
+.sigil-totp-qr canvas,
+.sigil-totp-qr img {
 	display: block;
 	width: 180px;
 	height: 180px;
 }
 
-.easy2fa-enrol__form--remove {
+.sigil-enrol__form--remove {
 	margin-top: 0.5em;
 }

@@ -2,15 +2,15 @@
 
 declare( strict_types=1 );
 
-namespace Easy2FA\Providers;
+namespace Sigil\Providers;
 
-use Easy2FA\Credentials;
-use Easy2FA\Provider;
-use Easy2FA\Store;
+use Sigil\Credentials;
+use Sigil\Provider;
+use Sigil\Store;
 
 defined( 'ABSPATH' ) || exit;
 
-require_once EASY2FA_DIR . 'includes/class-credentials.php';
+require_once SIGIL_DIR . 'includes/class-credentials.php';
 
 final class Passkey implements Provider {
 
@@ -36,7 +36,7 @@ final class Passkey implements Provider {
 			return;
 		}
 
-		$lib = EASY2FA_DIR . 'vendor/lbuchs/webauthn/WebAuthn.php';
+		$lib = SIGIL_DIR . 'vendor/lbuchs/webauthn/WebAuthn.php';
 		if ( is_readable( $lib ) ) {
 			require_once $lib;
 		}
@@ -47,7 +47,7 @@ final class Passkey implements Provider {
 	}
 
 	public function label(): string {
-		return __( 'Passkey', 'easy-2fa' );
+		return __( 'Passkey', 'sigil-2fa' );
 	}
 
 	public function priority(): int {
@@ -75,18 +75,18 @@ final class Passkey implements Provider {
 
 	public function render_enrol( int $user_id ): void {
 		if ( ! $this->is_available() || $user_id <= 0 ) {
-			echo '<p>' . esc_html__( 'Passkeys are not available in this environment.', 'easy-2fa' ) . '</p>';
+			echo '<p>' . esc_html__( 'Passkeys are not available in this environment.', 'sigil-2fa' ) . '</p>';
 			return;
 		}
 
 		$this->enqueue_script( $user_id );
 
-		echo '<div class="easy2fa-passkey-enrol" data-user-id="' . esc_attr( (string) $user_id ) . '">';
-		echo '<p>' . esc_html__( 'Register a passkey for this account. You will be prompted by your browser or device.', 'easy-2fa' ) . '</p>';
-		echo '<p><label for="easy2fa-passkey-label">' . esc_html__( 'Device label', 'easy-2fa' ) . '</label> ';
-		echo '<input type="text" id="easy2fa-passkey-label" name="easy2fa_passkey_label" class="regular-text" value="" maxlength="190" /></p>';
-		echo '<p><button type="button" class="button button-primary easy2fa-passkey-register">' . esc_html__( 'Register passkey', 'easy-2fa' ) . '</button></p>';
-		echo '<p class="easy2fa-passkey-status" role="status" aria-live="polite"></p>';
+		echo '<div class="sigil-passkey-enrol" data-user-id="' . esc_attr( (string) $user_id ) . '">';
+		echo '<p>' . esc_html__( 'Register a passkey for this account. You will be prompted by your browser or device.', 'sigil-2fa' ) . '</p>';
+		echo '<p><label for="sigil-passkey-label">' . esc_html__( 'Device label', 'sigil-2fa' ) . '</label> ';
+		echo '<input type="text" id="sigil-passkey-label" name="sigil_passkey_label" class="regular-text" value="" maxlength="190" /></p>';
+		echo '<p><button type="button" class="button button-primary sigil-passkey-register">' . esc_html__( 'Register passkey', 'sigil-2fa' ) . '</button></p>';
+		echo '<p class="sigil-passkey-status" role="status" aria-live="polite"></p>';
 		echo '</div>';
 	}
 
@@ -96,11 +96,11 @@ final class Passkey implements Provider {
 	 */
 	public function handle_enrol( int $user_id, array $input ) {
 		if ( ! $this->is_available() ) {
-			return new \WP_Error( 'easy2fa_passkey_unavailable', __( 'Passkeys are not available in this environment.', 'easy-2fa' ) );
+			return new \WP_Error( 'sigil_passkey_unavailable', __( 'Passkeys are not available in this environment.', 'sigil-2fa' ) );
 		}
 
 		if ( $user_id <= 0 || ! $this->user_can_manage( $user_id ) ) {
-			return new \WP_Error( 'easy2fa_forbidden', __( 'You are not allowed to enrol a passkey for this user.', 'easy-2fa' ) );
+			return new \WP_Error( 'sigil_forbidden', __( 'You are not allowed to enrol a passkey for this user.', 'sigil-2fa' ) );
 		}
 
 		$client_data_json  = $this->decode_binary_field( $input['clientDataJSON'] ?? '' );
@@ -110,12 +110,12 @@ final class Passkey implements Provider {
 		$transports        = $this->sanitize_transports( $transports_raw );
 
 		if ( '' === $client_data_json || '' === $attestation_object ) {
-			return new \WP_Error( 'easy2fa_passkey_invalid', __( 'Invalid passkey registration data.', 'easy-2fa' ) );
+			return new \WP_Error( 'sigil_passkey_invalid', __( 'Invalid passkey registration data.', 'sigil-2fa' ) );
 		}
 
 		$challenge = $this->get_challenge( $user_id, 'register' );
 		if ( null === $challenge ) {
-			return new \WP_Error( 'easy2fa_passkey_challenge', __( 'Registration challenge expired. Please try again.', 'easy-2fa' ) );
+			return new \WP_Error( 'sigil_passkey_challenge', __( 'Registration challenge expired. Please try again.', 'sigil-2fa' ) );
 		}
 
 		try {
@@ -131,7 +131,7 @@ final class Passkey implements Provider {
 			);
 		} catch ( \Throwable $e ) {
 			$this->clear_challenge( $user_id, 'register' );
-			return new \WP_Error( 'easy2fa_passkey_verify', __( 'Passkey registration failed verification.', 'easy-2fa' ) );
+			return new \WP_Error( 'sigil_passkey_verify', __( 'Passkey registration failed verification.', 'sigil-2fa' ) );
 		}
 
 		$this->clear_challenge( $user_id, 'register' );
@@ -141,20 +141,20 @@ final class Passkey implements Provider {
 		$sign_count    = isset( $data->signatureCounter ) && is_int( $data->signatureCounter ) ? $data->signatureCounter : 0;
 
 		if ( '' === $credential_id || '' === $public_key ) {
-			return new \WP_Error( 'easy2fa_passkey_invalid', __( 'Invalid passkey registration data.', 'easy-2fa' ) );
+			return new \WP_Error( 'sigil_passkey_invalid', __( 'Invalid passkey registration data.', 'sigil-2fa' ) );
 		}
 
 		if ( null !== Credentials::by_credential_id( $credential_id ) ) {
-			return new \WP_Error( 'easy2fa_passkey_duplicate', __( 'This passkey is already registered.', 'easy-2fa' ) );
+			return new \WP_Error( 'sigil_passkey_duplicate', __( 'This passkey is already registered.', 'sigil-2fa' ) );
 		}
 
 		if ( '' === $label ) {
-			$label = __( 'Passkey', 'easy-2fa' );
+			$label = __( 'Passkey', 'sigil-2fa' );
 		}
 
 		$id = Credentials::add( $user_id, $credential_id, $public_key, $sign_count, $label, $transports );
 		if ( $id <= 0 ) {
-			return new \WP_Error( 'easy2fa_passkey_store', __( 'Could not store the passkey.', 'easy-2fa' ) );
+			return new \WP_Error( 'sigil_passkey_store', __( 'Could not store the passkey.', 'sigil-2fa' ) );
 		}
 
 		Store::set_method(
@@ -170,17 +170,17 @@ final class Passkey implements Provider {
 
 	public function render_challenge( int $user_id ): void {
 		if ( ! $this->is_available() || $user_id <= 0 ) {
-			echo '<p>' . esc_html__( 'Passkeys are not available in this environment.', 'easy-2fa' ) . '</p>';
+			echo '<p>' . esc_html__( 'Passkeys are not available in this environment.', 'sigil-2fa' ) . '</p>';
 			return;
 		}
 
 		$this->enqueue_script( $user_id );
 
-		echo '<div class="easy2fa-passkey-challenge" data-user-id="' . esc_attr( (string) $user_id ) . '">';
-		echo '<p>' . esc_html__( 'Use your passkey to continue.', 'easy-2fa' ) . '</p>';
-		echo '<p><button type="button" class="button button-primary easy2fa-passkey-authenticate">' . esc_html__( 'Use passkey', 'easy-2fa' ) . '</button></p>';
-		echo '<p class="easy2fa-passkey-status" role="status" aria-live="polite"></p>';
-		echo '<input type="hidden" name="easy2fa_passkey_assertion" id="easy2fa-passkey-assertion" value="" />';
+		echo '<div class="sigil-passkey-challenge" data-user-id="' . esc_attr( (string) $user_id ) . '">';
+		echo '<p>' . esc_html__( 'Use your passkey to continue.', 'sigil-2fa' ) . '</p>';
+		echo '<p><button type="button" class="button button-primary sigil-passkey-authenticate">' . esc_html__( 'Use passkey', 'sigil-2fa' ) . '</button></p>';
+		echo '<p class="sigil-passkey-status" role="status" aria-live="polite"></p>';
+		echo '<input type="hidden" name="sigil_passkey_assertion" id="sigil-passkey-assertion" value="" />';
 		echo '</div>';
 	}
 
@@ -231,7 +231,7 @@ final class Passkey implements Provider {
 				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 				error_log(
 					sprintf(
-						'Easy 2FA: passkey sign count regression for user %d credential %d',
+						'Sigil: passkey sign count regression for user %d credential %d',
 						$user_id,
 						(int) $cred->id
 					)
@@ -250,7 +250,7 @@ final class Passkey implements Provider {
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 			error_log(
 				sprintf(
-					'Easy 2FA: passkey sign count regression for user %d credential %d (stored=%d new=%d)',
+					'Sigil: passkey sign count regression for user %d credential %d (stored=%d new=%d)',
 					$user_id,
 					(int) $cred->id,
 					$prev_count,
@@ -276,10 +276,10 @@ final class Passkey implements Provider {
 	}
 
 	private function register_hooks(): void {
-		add_action( 'wp_ajax_easy2fa_passkey_register_options', [ $this, 'ajax_register_options' ] );
-		add_action( 'wp_ajax_easy2fa_passkey_register', [ $this, 'ajax_register' ] );
-		add_action( 'wp_ajax_easy2fa_passkey_auth_options', [ $this, 'ajax_auth_options' ] );
-		add_action( 'wp_ajax_easy2fa_passkey_auth', [ $this, 'ajax_auth' ] );
+		add_action( 'wp_ajax_sigil_passkey_register_options', [ $this, 'ajax_register_options' ] );
+		add_action( 'wp_ajax_sigil_passkey_register', [ $this, 'ajax_register' ] );
+		add_action( 'wp_ajax_sigil_passkey_auth_options', [ $this, 'ajax_auth_options' ] );
+		add_action( 'wp_ajax_sigil_passkey_auth', [ $this, 'ajax_auth' ] );
 	}
 
 	public function ajax_register_options(): void {
@@ -287,16 +287,16 @@ final class Passkey implements Provider {
 
 		$user_id = $this->request_user_id();
 		if ( null === $user_id || ! $this->user_can_manage( $user_id ) ) {
-			wp_send_json_error( [ 'message' => __( 'You are not allowed to enrol a passkey for this user.', 'easy-2fa' ) ], 403 );
+			wp_send_json_error( [ 'message' => __( 'You are not allowed to enrol a passkey for this user.', 'sigil-2fa' ) ], 403 );
 		}
 
 		if ( ! $this->is_available() ) {
-			wp_send_json_error( [ 'message' => __( 'Passkeys are not available in this environment.', 'easy-2fa' ) ], 400 );
+			wp_send_json_error( [ 'message' => __( 'Passkeys are not available in this environment.', 'sigil-2fa' ) ], 400 );
 		}
 
 		$user = get_userdata( $user_id );
 		if ( ! $user ) {
-			wp_send_json_error( [ 'message' => __( 'User not found.', 'easy-2fa' ) ], 404 );
+			wp_send_json_error( [ 'message' => __( 'User not found.', 'sigil-2fa' ) ], 404 );
 		}
 
 		$exclude = [];
@@ -318,7 +318,7 @@ final class Passkey implements Provider {
 			);
 			$challenge = $webauthn->getChallenge()->getBinaryString();
 		} catch ( \Throwable $e ) {
-			wp_send_json_error( [ 'message' => __( 'Could not start passkey registration.', 'easy-2fa' ) ], 500 );
+			wp_send_json_error( [ 'message' => __( 'Could not start passkey registration.', 'sigil-2fa' ) ], 500 );
 		}
 
 		$this->store_challenge( $user_id, 'register', $challenge );
@@ -331,23 +331,28 @@ final class Passkey implements Provider {
 
 		$user_id = $this->request_user_id();
 		if ( null === $user_id || ! $this->user_can_manage( $user_id ) ) {
-			wp_send_json_error( [ 'message' => __( 'You are not allowed to enrol a passkey for this user.', 'easy-2fa' ) ], 403 );
+			wp_send_json_error( [ 'message' => __( 'You are not allowed to enrol a passkey for this user.', 'sigil-2fa' ) ], 403 );
 		}
 
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified in ajax_guard via check_ajax_referer.
+		// The nonce is verified by ajax_guard() above via check_ajax_referer, and the
+		// capability by user_can_manage(). These four values are base64 and JSON blobs
+		// the WebAuthn library parses and verifies cryptographically; running them
+		// through sanitize_text_field would corrupt the signature payload.
+		// phpcs:disable WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		$input = [
 			'clientDataJSON'    => isset( $_POST['clientDataJSON'] ) ? wp_unslash( (string) $_POST['clientDataJSON'] ) : '',
 			'attestationObject' => isset( $_POST['attestationObject'] ) ? wp_unslash( (string) $_POST['attestationObject'] ) : '',
 			'label'             => isset( $_POST['label'] ) ? wp_unslash( (string) $_POST['label'] ) : '',
 			'transports'        => isset( $_POST['transports'] ) ? wp_unslash( (string) $_POST['transports'] ) : '',
 		];
+		// phpcs:enable WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 
 		$result = $this->handle_enrol( $user_id, $input );
 		if ( is_wp_error( $result ) ) {
 			wp_send_json_error( [ 'message' => $result->get_error_message() ], 400 );
 		}
 
-		wp_send_json_success( [ 'message' => __( 'Passkey registered.', 'easy-2fa' ) ] );
+		wp_send_json_success( [ 'message' => __( 'Passkey registered.', 'sigil-2fa' ) ] );
 	}
 
 	public function ajax_auth_options(): void {
@@ -358,12 +363,12 @@ final class Passkey implements Provider {
 			// During login challenge the user may not be fully authenticated; allow if they can read themselves after password step.
 			// Still require a logged-in user or matching capability via ajax_guard (is_user_logged_in).
 			if ( null === $user_id || get_current_user_id() !== $user_id ) {
-				wp_send_json_error( [ 'message' => __( 'You are not allowed to use this passkey challenge.', 'easy-2fa' ) ], 403 );
+				wp_send_json_error( [ 'message' => __( 'You are not allowed to use this passkey challenge.', 'sigil-2fa' ) ], 403 );
 			}
 		}
 
 		if ( ! $this->is_available() ) {
-			wp_send_json_error( [ 'message' => __( 'Passkeys are not available in this environment.', 'easy-2fa' ) ], 400 );
+			wp_send_json_error( [ 'message' => __( 'Passkeys are not available in this environment.', 'sigil-2fa' ) ], 400 );
 		}
 
 		$ids = [];
@@ -372,7 +377,7 @@ final class Passkey implements Provider {
 		}
 
 		if ( [] === $ids ) {
-			wp_send_json_error( [ 'message' => __( 'No passkeys are registered for this account.', 'easy-2fa' ) ], 400 );
+			wp_send_json_error( [ 'message' => __( 'No passkeys are registered for this account.', 'sigil-2fa' ) ], 400 );
 		}
 
 		try {
@@ -389,7 +394,7 @@ final class Passkey implements Provider {
 			);
 			$challenge = $webauthn->getChallenge()->getBinaryString();
 		} catch ( \Throwable $e ) {
-			wp_send_json_error( [ 'message' => __( 'Could not start passkey authentication.', 'easy-2fa' ) ], 500 );
+			wp_send_json_error( [ 'message' => __( 'Could not start passkey authentication.', 'sigil-2fa' ) ], 500 );
 		}
 
 		$this->store_challenge( $user_id, 'auth', $challenge );
@@ -402,34 +407,39 @@ final class Passkey implements Provider {
 
 		$user_id = $this->request_user_id();
 		if ( null === $user_id ) {
-			wp_send_json_error( [ 'message' => __( 'Invalid user.', 'easy-2fa' ) ], 400 );
+			wp_send_json_error( [ 'message' => __( 'Invalid user.', 'sigil-2fa' ) ], 400 );
 		}
 
 		if ( get_current_user_id() !== $user_id && ! $this->user_can_manage( $user_id ) ) {
-			wp_send_json_error( [ 'message' => __( 'You are not allowed to use this passkey challenge.', 'easy-2fa' ) ], 403 );
+			wp_send_json_error( [ 'message' => __( 'You are not allowed to use this passkey challenge.', 'sigil-2fa' ) ], 403 );
 		}
 
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified in ajax_guard via check_ajax_referer.
+		// The nonce is verified by ajax_guard() above via check_ajax_referer, and the
+		// caller is checked against user_can_manage(). These four values are base64 and
+		// JSON blobs the WebAuthn library parses and verifies cryptographically; running
+		// them through sanitize_text_field would corrupt the assertion payload.
+		// phpcs:disable WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		$input = [
 			'clientDataJSON'    => isset( $_POST['clientDataJSON'] ) ? wp_unslash( (string) $_POST['clientDataJSON'] ) : '',
 			'authenticatorData' => isset( $_POST['authenticatorData'] ) ? wp_unslash( (string) $_POST['authenticatorData'] ) : '',
 			'signature'         => isset( $_POST['signature'] ) ? wp_unslash( (string) $_POST['signature'] ) : '',
 			'id'                => isset( $_POST['id'] ) ? wp_unslash( (string) $_POST['id'] ) : '',
 		];
+		// phpcs:enable WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 
 		if ( ! $this->validate( $user_id, $input ) ) {
-			wp_send_json_error( [ 'message' => __( 'Passkey authentication failed.', 'easy-2fa' ) ], 400 );
+			wp_send_json_error( [ 'message' => __( 'Passkey authentication failed.', 'sigil-2fa' ) ], 400 );
 		}
 
-		wp_send_json_success( [ 'message' => __( 'Passkey verified.', 'easy-2fa' ) ] );
+		wp_send_json_success( [ 'message' => __( 'Passkey verified.', 'sigil-2fa' ) ] );
 	}
 
 	private function ajax_guard(): void {
 		if ( ! is_user_logged_in() ) {
-			wp_send_json_error( [ 'message' => __( 'You must be logged in.', 'easy-2fa' ) ], 401 );
+			wp_send_json_error( [ 'message' => __( 'You must be logged in.', 'sigil-2fa' ) ], 401 );
 		}
 
-		check_ajax_referer( 'easy2fa_passkey', 'nonce' );
+		check_ajax_referer( 'sigil_passkey', 'nonce' );
 	}
 
 	private function request_user_id(): ?int {
@@ -447,26 +457,26 @@ final class Passkey implements Provider {
 
 	private function enqueue_script( int $user_id ): void {
 		wp_enqueue_script(
-			'easy2fa-passkey',
-			EASY2FA_URL . 'assets/js/passkey.js',
+			'sigil-passkey',
+			SIGIL_URL . 'assets/js/passkey.js',
 			[],
-			EASY2FA_VERSION,
+			SIGIL_VERSION,
 			true
 		);
 
 		wp_localize_script(
-			'easy2fa-passkey',
-			'easy2faPasskey',
+			'sigil-passkey',
+			'sigilPasskey',
 			[
 				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-				'nonce'   => wp_create_nonce( 'easy2fa_passkey' ),
+				'nonce'   => wp_create_nonce( 'sigil_passkey' ),
 				'userId'  => $user_id,
 				'i18n'    => [
-					'unsupported'   => __( 'Passkeys are not supported in this browser or context. Use HTTPS and a modern browser.', 'easy-2fa' ),
-					'registering'   => __( 'Follow the browser prompt to register your passkey…', 'easy-2fa' ),
-					'registered'    => __( 'Passkey registered.', 'easy-2fa' ),
-					'authenticating'=> __( 'Follow the browser prompt to use your passkey…', 'easy-2fa' ),
-					'failed'        => __( 'Something went wrong. Please try again.', 'easy-2fa' ),
+					'unsupported'   => __( 'Passkeys are not supported in this browser or context. Use HTTPS and a modern browser.', 'sigil-2fa' ),
+					'registering'   => __( 'Follow the browser prompt to register your passkey…', 'sigil-2fa' ),
+					'registered'    => __( 'Passkey registered.', 'sigil-2fa' ),
+					'authenticating'=> __( 'Follow the browser prompt to use your passkey…', 'sigil-2fa' ),
+					'failed'        => __( 'Something went wrong. Please try again.', 'sigil-2fa' ),
 				],
 			]
 		);
@@ -495,13 +505,13 @@ final class Passkey implements Provider {
 		 *
 		 * @param string $host Hostname derived from home_url().
 		 */
-		$rp_id = apply_filters( 'easy2fa_rp_id', $host );
+		$rp_id = apply_filters( 'sigil_rp_id', $host );
 
 		return is_string( $rp_id ) && '' !== $rp_id ? $rp_id : $host;
 	}
 
 	private function challenge_key( int $user_id, string $purpose ): string {
-		return 'easy2fa_pk_' . $purpose . '_' . $user_id;
+		return 'sigil_pk_' . $purpose . '_' . $user_id;
 	}
 
 	private function store_challenge( int $user_id, string $purpose, string $challenge ): void {

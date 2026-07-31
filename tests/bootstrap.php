@@ -18,10 +18,10 @@ require_once $_tests_dir . '/includes/functions.php';
 /**
  * @return void
  */
-function _easy2fa_manually_load_plugin() {
-	require dirname( __DIR__ ) . '/easy-2fa.php';
+function _sigil_manually_load_plugin() {
+	require dirname( __DIR__ ) . '/sigil-2fa.php';
 }
 
-tests_add_filter( 'muplugins_loaded', '_easy2fa_manually_load_plugin' );
+tests_add_filter( 'muplugins_loaded', '_sigil_manually_load_plugin' );
 
 require $_tests_dir . '/includes/bootstrap.php';

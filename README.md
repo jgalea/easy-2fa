@@ -1,6 +1,6 @@
 <div align="center">
 
-# Easy 2FA
+# Sigil
 
 [![License](https://img.shields.io/badge/LICENSE-GPL--3.0-5C9E31?style=for-the-badge)](LICENSE)
 [![Built by](https://img.shields.io/badge/BUILT%20BY-REBELCODE-8A2BE2?style=for-the-badge)](https://rebelcode.com)
@@ -9,7 +9,7 @@
 
 </div>
 
-Easy 2FA does one job completely instead of holding half of it back. Passkeys, per-role enforcement, backup codes and lockout recovery are all in the free plugin. There is no account to create and nothing phones home.
+Sigil does one job completely instead of holding half of it back. Passkeys, per-role enforcement, backup codes and lockout recovery are all in the free plugin. There is no account to create and nothing phones home.
 
 ## Methods
 
@@ -24,11 +24,11 @@ Require 2FA per role or by capability, with a grace period so existing users get
 
 ## Recovery
 
-Backup codes are shown at first enrolment. Any administrator can reset another user's 2FA from the Users screen, and `wp 2fa reset <user>` clears a second factor from the command line when nobody can reach the dashboard.
+Backup codes are shown at first enrolment. Any administrator can reset another user's 2FA from the Users screen, and `wp sigil reset <user>` clears a second factor from the command line when nobody can reach the dashboard.
 
 ## Application passwords
 
-Application passwords authenticate the REST API and XML-RPC, and 2FA does not apply to them. Easy 2FA says so on its settings screen and lets you disable them per role.
+Application passwords authenticate the REST API and XML-RPC, and 2FA does not apply to them. Sigil says so on its settings screen and lets you disable them per role.
 
 ## Development
 
@@ -36,7 +36,7 @@ Application passwords authenticate the REST API and XML-RPC, and 2FA does not ap
 composer install && npm install
 composer test                             # unit tests
 npx wp-env start && npx playwright test    # end-to-end, on localhost:8877
-./build/build-free.sh                      # dist/easy-2fa.zip
+./build/build-free.sh                      # dist/sigil-2fa.zip
 ```
 
 Requires WordPress 6.9+ and PHP 7.4+.

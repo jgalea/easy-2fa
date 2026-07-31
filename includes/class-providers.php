@@ -2,7 +2,7 @@
 
 declare( strict_types=1 );
 
-namespace Easy2FA;
+namespace Sigil;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -43,7 +43,7 @@ final class Providers {
 	 * @return list<Provider>
 	 */
 	public function all(): array {
-		$registry = apply_filters( 'easy2fa_providers', $this->providers );
+		$registry = apply_filters( 'sigil_providers', $this->providers );
 		if ( ! is_array( $registry ) ) {
 			$registry = $this->providers;
 		}
@@ -87,10 +87,10 @@ final class Providers {
 
 	private function load_core_providers(): void {
 		$map = [
-			EASY2FA_DIR . 'includes/providers/class-passkey.php'      => Providers\Passkey::class,
-			EASY2FA_DIR . 'includes/providers/class-totp.php'         => Providers\TOTP::class,
-			EASY2FA_DIR . 'includes/providers/class-email.php'        => Providers\Email::class,
-			EASY2FA_DIR . 'includes/providers/class-backup-codes.php' => Providers\Backup_Codes::class,
+			SIGIL_DIR . 'includes/providers/class-passkey.php'      => Providers\Passkey::class,
+			SIGIL_DIR . 'includes/providers/class-totp.php'         => Providers\TOTP::class,
+			SIGIL_DIR . 'includes/providers/class-email.php'        => Providers\Email::class,
+			SIGIL_DIR . 'includes/providers/class-backup-codes.php' => Providers\Backup_Codes::class,
 		];
 
 		foreach ( $map as $file => $class ) {

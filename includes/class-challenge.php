@@ -2,7 +2,7 @@
 
 declare( strict_types=1 );
 
-namespace Easy2FA;
+namespace Sigil;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -21,7 +21,7 @@ final class Challenge {
 
 	private function __construct() {
 		add_action( 'wp_login', array( $this, 'on_login' ), 10, 2 );
-		add_action( 'login_form_easy2fa', array( $this, 'handle_challenge_request' ) );
+		add_action( 'login_form_sigil', array( $this, 'handle_challenge_request' ) );
 	}
 
 	/**
@@ -59,7 +59,7 @@ final class Challenge {
 	public static function complete( string $token, string $provider_id, array $input ) {
 		$payload = self::payload( $token );
 		if ( null === $payload ) {
-			return new \WP_Error( 'easy2fa_invalid_token', __( 'This verification session has expired. Please log in again.', 'easy-2fa' ) );
+			return new \WP_Error( 'sigil_invalid_token', __( 'This verification session has expired. Please log in again.', 'sigil-2fa' ) );
 		}
 
 		$user_id = $payload['user_id'];
@@ -68,8 +68,8 @@ final class Challenge {
 
 		if ( Rate_Limit::blocked( $user_key ) || Rate_Limit::blocked( $ip_key ) ) {
 			return new \WP_Error(
-				'easy2fa_rate_limited',
-				__( 'Too many failed attempts. Please wait before trying again.', 'easy-2fa' )
+				'sigil_rate_limited',
+				__( 'Too many failed attempts. Please wait before trying again.', 'sigil-2fa' )
 			);
 		}
 
@@ -78,13 +78,13 @@ final class Challenge {
 		if ( null === $provider || ! $provider->is_enrolled( $user_id ) ) {
 			Rate_Limit::hit( $user_key );
 			Rate_Limit::hit( $ip_key );
-			return new \WP_Error( 'easy2fa_invalid_method', __( 'Verification failed.', 'easy-2fa' ) );
+			return new \WP_Error( 'sigil_invalid_method', __( 'Verification failed.', 'sigil-2fa' ) );
 		}
 
 		if ( ! $provider->validate( $user_id, $input ) ) {
 			Rate_Limit::hit( $user_key );
 			Rate_Limit::hit( $ip_key );
-			return new \WP_Error( 'easy2fa_invalid_code', __( 'Verification failed.', 'easy-2fa' ) );
+			return new \WP_Error( 'sigil_invalid_code', __( 'Verification failed.', 'sigil-2fa' ) );
 		}
 
 		delete_transient( self::transient_key( $token ) );
@@ -118,14 +118,19 @@ final class Challenge {
 		// Extension point for a trusted-device add-on. Defaults to false, so the
 		// second factor is only ever skipped by code that deliberately opts in
 		// (the Pro trusted-devices feature, which requires a valid signed token).
-		if ( true === apply_filters( 'easy2fa_skip_challenge', false, $user ) ) {
+		if ( true === apply_filters( 'sigil_skip_challenge', false, $user ) ) {
 			return;
 		}
 
-		$remember    = ! empty( $_POST['rememberme'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		// This runs inside wp_login, where WordPress has already validated the login POST;
+		// there is no nonce of ours to check yet. sanitize_redirect() runs the value through
+		// esc_url_raw() and wp_validate_redirect().
+		// phpcs:disable WordPress.Security.NonceVerification.Missing, WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$remember    = ! empty( $_POST['rememberme'] );
 		$redirect_to = self::sanitize_redirect(
-			isset( $_REQUEST['redirect_to'] ) ? wp_unslash( (string) $_REQUEST['redirect_to'] ) : '' // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			isset( $_REQUEST['redirect_to'] ) ? wp_unslash( (string) $_REQUEST['redirect_to'] ) : ''
 		);
+		// phpcs:enable WordPress.Security.NonceVerification.Missing, WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 
 		wp_clear_auth_cookie();
 
@@ -135,15 +140,15 @@ final class Challenge {
 	}
 
 	/**
-	 * Handle POST/GET on wp-login.php?action=easy2fa.
+	 * Handle POST/GET on wp-login.php?action=sigil.
 	 */
 	public function handle_challenge_request(): void {
 		// Never trap logout, ajax, admin-post, or REST: those are different entry points.
 		$token = '';
-		if ( isset( $_POST['easy2fa_token'] ) ) {
-			$token = sanitize_text_field( wp_unslash( (string) $_POST['easy2fa_token'] ) );
-		} elseif ( isset( $_GET['easy2fa_token'] ) ) {
-			$token = sanitize_text_field( wp_unslash( (string) $_GET['easy2fa_token'] ) );
+		if ( isset( $_POST['sigil_token'] ) ) {
+			$token = sanitize_text_field( wp_unslash( (string) $_POST['sigil_token'] ) );
+		} elseif ( isset( $_GET['sigil_token'] ) ) {
+			$token = sanitize_text_field( wp_unslash( (string) $_GET['sigil_token'] ) );
 		}
 
 		$user = '' !== $token ? self::user_for( $token ) : null;
@@ -153,15 +158,15 @@ final class Challenge {
 		}
 
 		$provider_id = '';
-		if ( isset( $_REQUEST['easy2fa_provider'] ) ) {
-			$provider_id = sanitize_key( wp_unslash( (string) $_REQUEST['easy2fa_provider'] ) );
+		if ( isset( $_REQUEST['sigil_provider'] ) ) {
+			$provider_id = sanitize_key( wp_unslash( (string) $_REQUEST['sigil_provider'] ) );
 		}
 
 		$error = null;
 
-		if ( isset( $_POST['easy2fa_authenticate'] ) ) {
-			if ( ! isset( $_POST['easy2fa_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( (string) $_POST['easy2fa_nonce'] ) ), 'easy2fa_challenge' ) ) {
-				$error = new \WP_Error( 'easy2fa_bad_nonce', __( 'Verification failed. Please try again.', 'easy-2fa' ) );
+		if ( isset( $_POST['sigil_authenticate'] ) ) {
+			if ( ! isset( $_POST['sigil_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( (string) $_POST['sigil_nonce'] ) ), 'sigil_challenge' ) ) {
+				$error = new \WP_Error( 'sigil_bad_nonce', __( 'Verification failed. Please try again.', 'sigil-2fa' ) );
 				$this->render_screen( $token, $user, $error, $provider_id );
 				exit;
 			}
@@ -175,16 +180,19 @@ final class Challenge {
 				exit;
 			}
 
-			$remember = $payload_before ? $payload_before['remember'] : ! empty( $_POST['easy2fa_remember'] );
+			$remember = $payload_before ? $payload_before['remember'] : ! empty( $_POST['sigil_remember'] );
 			$redirect_to = '';
 			if ( $payload_before && '' !== $payload_before['redirect_to'] ) {
 				$redirect_to = $payload_before['redirect_to'];
-			} elseif ( isset( $_POST['easy2fa_redirect_to'] ) ) {
-				$redirect_to = self::sanitize_redirect( wp_unslash( (string) $_POST['easy2fa_redirect_to'] ) );
+			} elseif ( isset( $_POST['sigil_redirect_to'] ) ) {
+				// The challenge nonce was verified at the top of this handler, and
+				// sanitize_redirect() applies esc_url_raw() and wp_validate_redirect().
+				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+				$redirect_to = self::sanitize_redirect( wp_unslash( (string) $_POST['sigil_redirect_to'] ) );
 			}
 
 			wp_set_auth_cookie( $user->ID, $remember );
-			do_action( 'easy2fa_challenge_passed', $user->ID, $provider_id );
+			do_action( 'sigil_challenge_passed', $user->ID, $provider_id );
 
 			if ( '' === $redirect_to ) {
 				$redirect_to = admin_url();
@@ -220,7 +228,7 @@ final class Challenge {
 	}
 
 	private static function transient_key( string $token ): string {
-		return 'easy2fa_ch_' . hash( 'sha256', $token );
+		return 'sigil_ch_' . hash( 'sha256', $token );
 	}
 
 	private static function ip_rate_key(): string {
@@ -257,7 +265,7 @@ final class Challenge {
 				continue;
 			}
 			// Skip our own control fields; providers read their own keys (code, etc.).
-			if ( 0 === strpos( $key, 'easy2fa_' ) || 'action' === $key || '_wp_http_referer' === $key ) {
+			if ( 0 === strpos( $key, 'sigil_' ) || 'action' === $key || '_wp_http_referer' === $key ) {
 				continue;
 			}
 			if ( is_string( $value ) ) {
@@ -310,7 +318,7 @@ final class Challenge {
 
 		nocache_headers();
 
-		$login_title = __( 'Two-factor authentication', 'easy-2fa' );
+		$login_title = __( 'Two-factor authentication', 'sigil-2fa' );
 
 		// login_header/footer exist when the request entered via wp-login.php.
 		// on_login often runs before those helpers have printed, but they are defined.
@@ -321,7 +329,7 @@ final class Challenge {
 				'',
 				$challenge_error instanceof \WP_Error ? $challenge_error : new \WP_Error()
 			);
-			require EASY2FA_DIR . 'templates/challenge.php';
+			require SIGIL_DIR . 'templates/challenge.php';
 			login_footer();
 			return;
 		}
@@ -339,23 +347,28 @@ final class Challenge {
 	<title><?php echo esc_html( $login_title ); ?></title>
 	<?php
 	wp_enqueue_style( 'login' );
+	// login_enqueue_scripts, login_head and login_footer are core WordPress hooks, not
+	// ours. The challenge screen is a login interstitial, so it fires them to pick up
+	// whatever themes and plugins already add to wp-login.php.
+	// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 	do_action( 'login_enqueue_scripts' );
 	wp_print_styles();
 	wp_print_head_scripts();
 	do_action( 'login_head' );
 	?>
 </head>
-<body class="login no-js login-action-easy2fa wp-core-ui">
+<body class="login no-js login-action-sigil wp-core-ui">
 	<div id="login">
 		<?php
 		if ( $challenge_error instanceof \WP_Error && $challenge_error->has_errors() ) {
 			echo '<div id="login_error">' . wp_kses_post( $challenge_error->get_error_message() ) . '</div>';
 		}
-		require EASY2FA_DIR . 'templates/challenge.php';
+		require SIGIL_DIR . 'templates/challenge.php';
 		?>
 	</div>
 	<?php
 	do_action( 'login_footer' );
+	// phpcs:enable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 	wp_print_footer_scripts();
 	?>
 </body>
