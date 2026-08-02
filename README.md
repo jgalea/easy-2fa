@@ -3,7 +3,7 @@
 # Sigil
 
 [![License](https://img.shields.io/badge/LICENSE-GPL--3.0-5C9E31?style=for-the-badge)](LICENSE)
-[![Built by](https://img.shields.io/badge/BUILT%20BY-REBELCODE-8A2BE2?style=for-the-badge)](https://rebelcode.com)
+[![Built by](https://img.shields.io/badge/BUILT%20BY-JEAN%20GALEA-8A2BE2?style=for-the-badge)](https://jeangalea.com)
 
 **Two-factor authentication for WordPress: passkeys, authenticator apps, backup codes and email codes, with per-role enforcement and recovery that actually works.**
 

@@ -1,10 +1,10 @@
 === Sigil – Passkeys and Two-Factor Authentication ===
-Contributors: rebelcode
+Contributors: jeangalea
 Tags: two-factor, 2fa, passkeys, authentication, security
 Requires at least: 6.9
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 0.1.1
+Stable tag: 0.1.2
 License: GPL-3.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -69,6 +69,9 @@ Passkeys need PHP 8.0 or newer. On older PHP the plugin still runs and offers au
 Yes. Settings → Sigil lets you pick exactly which roles are required, and set a grace period so people are prompted to enrol rather than locked out immediately.
 
 == Changelog ==
+
+= 0.1.2 =
+* Author attribution updated to Jean Galea.
 
 = 0.1.1 =
 * Renamed the plugin to Sigil. The text domain is now `sigil-2fa` and the WP-CLI command is `wp sigil`.

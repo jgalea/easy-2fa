@@ -2,11 +2,11 @@
 /**
  * Plugin Name: Sigil – Passkeys and Two-Factor Authentication
  * Description: Two-factor authentication for WordPress logins: passkeys, authenticator apps, backup codes and email codes, with per-role enforcement and account recovery.
- * Version: 0.1.1
+ * Version: 0.1.2
  * Requires at least: 6.9
  * Requires PHP: 7.4
- * Author: RebelCode
- * Author URI: https://rebelcode.com
+ * Author: Jean Galea
+ * Author URI: https://jeangalea.com
  * License: GPL-3.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html
  * Text Domain: sigil-2fa
@@ -17,7 +17,7 @@ declare( strict_types=1 );
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'SIGIL_VERSION', '0.1.1' );
+define( 'SIGIL_VERSION', '0.1.2' );
 define( 'SIGIL_FILE', __FILE__ );
 define( 'SIGIL_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SIGIL_URL', plugin_dir_url( __FILE__ ) );

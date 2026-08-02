@@ -1,40 +1,37 @@
-# Copyright (C) 2026 RebelCode
+# Copyright (C) 2026 Jean Galea
 # This file is distributed under the GPL-3.0-or-later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Sigil 0.1.0\n"
+"Project-Id-Version: Sigil – Passkeys and Two-Factor Authentication 0.1.1\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/sigil-2fa\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-26T15:47:08+00:00\n"
+"POT-Creation-Date: 2026-08-02T13:47:38+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: sigil-2fa\n"
 
 #. Plugin Name of the plugin
 #: sigil-2fa.php
-#: includes/class-settings.php:27
-#: includes/class-settings.php:28
-#: templates/settings.php:23
-msgid "Sigil"
+msgid "Sigil – Passkeys and Two-Factor Authentication"
 msgstr ""
 
 #. Description of the plugin
 #: sigil-2fa.php
-msgid "Two-factor authentication that should have been standard. Passkeys, authenticator apps, backup codes and email codes, with per-role enforcement and recovery that actually works."
+msgid "Two-factor authentication for WordPress logins: passkeys, authenticator apps, backup codes and email codes, with per-role enforcement and account recovery."
 msgstr ""
 
 #. Author of the plugin
 #: sigil-2fa.php
-msgid "RebelCode"
+msgid "Jean Galea"
 msgstr ""
 
 #. Author URI of the plugin
 #: sigil-2fa.php
-msgid "https://rebelcode.com"
+msgid "https://jeangalea.com"
 msgstr ""
 
 #: includes/class-challenge.php:62
@@ -50,12 +47,12 @@ msgstr ""
 msgid "Verification failed."
 msgstr ""
 
-#: includes/class-challenge.php:157
+#: includes/class-challenge.php:169
 msgid "Verification failed. Please try again."
 msgstr ""
 
-#: includes/class-challenge.php:306
-#: templates/challenge.php:21
+#: includes/class-challenge.php:321
+#: templates/challenge.php:26
 msgid "Two-factor authentication"
 msgstr ""
 
@@ -78,13 +75,13 @@ msgid "Dismiss"
 msgstr ""
 
 #: includes/class-enforcement.php:106
-#: includes/providers/class-passkey.php:429
+#: includes/providers/class-passkey.php:439
 msgid "You must be logged in."
 msgstr ""
 
 #: includes/class-enrolment.php:34
 #: includes/class-enrolment.php:98
-#: templates/enrol.php:30
+#: templates/enrol.php:35
 msgid "Two-Factor Authentication"
 msgstr ""
 
@@ -98,30 +95,30 @@ msgid "You do not have permission to access this page."
 msgstr ""
 
 #: includes/class-enrolment.php:113
-#: includes/class-enrolment.php:160
-#: includes/class-enrolment.php:206
-#: includes/class-enrolment.php:238
-#: includes/class-enrolment.php:255
+#: includes/class-enrolment.php:169
+#: includes/class-enrolment.php:217
+#: includes/class-enrolment.php:249
+#: includes/class-enrolment.php:266
 msgid "You are not allowed to change two-factor methods for this user."
 msgstr ""
 
 #: includes/class-enrolment.php:121
 #: includes/class-enrolment.php:129
-#: includes/class-enrolment.php:168
+#: includes/class-enrolment.php:177
 msgid "Unknown authentication method."
 msgstr ""
 
-#: includes/class-enrolment.php:176
+#: includes/class-enrolment.php:185
 msgid "That authentication method is not set up."
 msgstr ""
 
-#: includes/class-enrolment.php:186
+#: includes/class-enrolment.php:195
 msgid "You cannot remove your last authentication method while two-factor authentication is required."
 msgstr ""
 
 #: includes/class-recovery.php:39
 #: includes/class-recovery.php:139
-#: includes/providers/class-passkey.php:405
+#: includes/providers/class-passkey.php:410
 msgid "Invalid user."
 msgstr ""
 
@@ -176,7 +173,13 @@ msgid ""
 "If you did not expect this change, contact a site administrator immediately."
 msgstr ""
 
-#: includes/class-settings.php:53
+#: includes/class-settings.php:27
+#: includes/class-settings.php:28
+#: templates/settings.php:28
+msgid "Sigil"
+msgstr ""
+
+#: includes/class-settings.php:54
 msgid "You do not have permission to save these settings."
 msgstr ""
 
@@ -195,43 +198,43 @@ msgstr ""
 msgid "Not set up (due %s)"
 msgstr ""
 
-#: includes/providers/class-backup-codes.php:24
+#: includes/providers/class-backup-codes.php:25
 msgid "Backup codes"
 msgstr ""
 
-#: includes/providers/class-backup-codes.php:91
+#: includes/providers/class-backup-codes.php:122
 msgid "Backup codes are already set. Generate new codes to replace them; the old ones will stop working."
 msgstr ""
 
 #. translators: %d: number of unused backup codes remaining
-#: includes/providers/class-backup-codes.php:95
+#: includes/providers/class-backup-codes.php:126
 #, php-format
 msgid "%d backup code remaining."
 msgid_plural "%d backup codes remaining."
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/providers/class-backup-codes.php:100
+#: includes/providers/class-backup-codes.php:131
 msgid "Backup codes have not been generated yet."
 msgstr ""
 
-#: includes/providers/class-backup-codes.php:110
+#: includes/providers/class-backup-codes.php:141
 msgid "Save these backup codes now. They will not be shown again."
 msgstr ""
 
-#: includes/providers/class-backup-codes.php:111
+#: includes/providers/class-backup-codes.php:142
 msgid "Each code can be used once if you lose access to your other authentication methods."
 msgstr ""
 
-#: includes/providers/class-backup-codes.php:121
+#: includes/providers/class-backup-codes.php:152
 msgid "Download as text"
 msgstr ""
 
-#: includes/providers/class-backup-codes.php:136
+#: includes/providers/class-backup-codes.php:167
 msgid "Enter one of your backup codes."
 msgstr ""
 
-#: includes/providers/class-backup-codes.php:137
+#: includes/providers/class-backup-codes.php:168
 msgid "Backup code"
 msgstr ""
 
@@ -286,7 +289,7 @@ msgstr ""
 #: includes/providers/class-passkey.php:99
 #: includes/providers/class-passkey.php:173
 #: includes/providers/class-passkey.php:294
-#: includes/providers/class-passkey.php:366
+#: includes/providers/class-passkey.php:371
 msgid "Passkeys are not available in this environment."
 msgstr ""
 
@@ -341,45 +344,45 @@ msgstr ""
 msgid "Could not start passkey registration."
 msgstr ""
 
-#: includes/providers/class-passkey.php:350
-#: includes/providers/class-passkey.php:467
+#: includes/providers/class-passkey.php:355
+#: includes/providers/class-passkey.php:477
 msgid "Passkey registered."
 msgstr ""
 
-#: includes/providers/class-passkey.php:361
-#: includes/providers/class-passkey.php:409
+#: includes/providers/class-passkey.php:366
+#: includes/providers/class-passkey.php:414
 msgid "You are not allowed to use this passkey challenge."
 msgstr ""
 
-#: includes/providers/class-passkey.php:375
+#: includes/providers/class-passkey.php:380
 msgid "No passkeys are registered for this account."
 msgstr ""
 
-#: includes/providers/class-passkey.php:392
+#: includes/providers/class-passkey.php:397
 msgid "Could not start passkey authentication."
 msgstr ""
 
-#: includes/providers/class-passkey.php:421
+#: includes/providers/class-passkey.php:431
 msgid "Passkey authentication failed."
 msgstr ""
 
-#: includes/providers/class-passkey.php:424
+#: includes/providers/class-passkey.php:434
 msgid "Passkey verified."
 msgstr ""
 
-#: includes/providers/class-passkey.php:465
+#: includes/providers/class-passkey.php:475
 msgid "Passkeys are not supported in this browser or context. Use HTTPS and a modern browser."
 msgstr ""
 
-#: includes/providers/class-passkey.php:466
+#: includes/providers/class-passkey.php:476
 msgid "Follow the browser prompt to register your passkey…"
 msgstr ""
 
-#: includes/providers/class-passkey.php:468
+#: includes/providers/class-passkey.php:478
 msgid "Follow the browser prompt to use your passkey…"
 msgstr ""
 
-#: includes/providers/class-passkey.php:469
+#: includes/providers/class-passkey.php:479
 msgid "Something went wrong. Please try again."
 msgstr ""
 
@@ -419,142 +422,142 @@ msgstr ""
 msgid "Authenticator code"
 msgstr ""
 
-#: templates/challenge.php:22
+#: templates/challenge.php:27
 msgid "Enter a verification code to finish signing in."
 msgstr ""
 
-#: templates/challenge.php:25
-#: templates/enrol.php:93
+#: templates/challenge.php:30
+#: templates/enrol.php:98
 msgid "Authentication methods"
 msgstr ""
 
-#: templates/challenge.php:60
+#: templates/challenge.php:75
 msgid "Verify"
 msgstr ""
 
-#: templates/challenge.php:66
+#: templates/challenge.php:81
 msgid "Cancel and go back to login"
 msgstr ""
 
-#: templates/enrol.php:32
+#: templates/enrol.php:37
 msgid "Add a second step to your sign-in. Passkeys are the simplest option when your device supports them; an authenticator app works everywhere."
 msgstr ""
 
-#: templates/enrol.php:41
+#: templates/enrol.php:46
 msgid "Method saved. Save your backup codes below — they will not be shown again."
 msgstr ""
 
-#: templates/enrol.php:44
+#: templates/enrol.php:49
 msgid "Authentication method saved."
 msgstr ""
 
-#: templates/enrol.php:47
+#: templates/enrol.php:52
 msgid "Authentication method removed."
 msgstr ""
 
-#: templates/enrol.php:50
+#: templates/enrol.php:55
 msgid "Saved."
 msgstr ""
 
-#: templates/enrol.php:60
+#: templates/enrol.php:65
 msgid "Could not update two-factor authentication."
 msgstr ""
 
-#: templates/enrol.php:83
+#: templates/enrol.php:88
 msgid "Active methods:"
 msgstr ""
 
-#: templates/enrol.php:89
+#: templates/enrol.php:94
 msgid "No authentication methods are set up yet."
 msgstr ""
 
-#: templates/enrol.php:113
+#: templates/enrol.php:118
 msgid "On"
 msgstr ""
 
-#: templates/enrol.php:147
+#: templates/enrol.php:152
 msgid "Generate new backup codes"
 msgstr ""
 
-#: templates/enrol.php:151
+#: templates/enrol.php:156
 msgid "Generating new codes invalidates any codes you still have written down."
 msgstr ""
 
-#: templates/enrol.php:162
+#: templates/enrol.php:167
 msgid "Generate backup codes"
 msgstr ""
 
-#: templates/enrol.php:170
+#: templates/enrol.php:175
 msgid "This method is set up on your account."
 msgstr ""
 
-#: templates/enrol.php:179
+#: templates/enrol.php:184
 msgid "Remove this method"
 msgstr ""
 
-#: templates/enrol.php:184
+#: templates/enrol.php:189
 msgid "You can register another passkey below."
 msgstr ""
 
 #. translators: %s: method label
-#: templates/enrol.php:207
+#: templates/enrol.php:212
 #, php-format
 msgid "Enable %s"
 msgstr ""
 
-#: templates/settings.php:26
+#: templates/settings.php:31
 msgid "Settings saved."
 msgstr ""
 
-#: templates/settings.php:31
+#: templates/settings.php:36
 msgid "What 2FA protects"
 msgstr ""
 
-#: templates/settings.php:35
+#: templates/settings.php:40
 msgid "Sigil protects interactive logins (the normal WordPress login form and the challenge that follows). It does not apply to application passwords. REST API and XML-RPC requests authenticated with an application password bypass two-factor authentication entirely. If a role should not use that hole, disable application passwords for that role below."
 msgstr ""
 
-#: templates/settings.php:49
+#: templates/settings.php:54
 msgid "Enforcement"
 msgstr ""
 
-#: templates/settings.php:53
+#: templates/settings.php:58
 msgid "Require two-factor authentication for selected roles"
 msgstr ""
 
-#: templates/settings.php:59
+#: templates/settings.php:64
 msgid "Roles that must enrol"
 msgstr ""
 
-#: templates/settings.php:62
-#: templates/settings.php:109
+#: templates/settings.php:67
+#: templates/settings.php:114
 msgid "No roles found."
 msgstr ""
 
-#: templates/settings.php:83
+#: templates/settings.php:88
 msgid "Minimum capability"
 msgstr ""
 
-#: templates/settings.php:88
+#: templates/settings.php:93
 msgid "Optional. Any user with this capability is covered regardless of role. Roles and capability are combined with OR."
 msgstr ""
 
-#: templates/settings.php:95
+#: templates/settings.php:100
 msgid "Grace period (days)"
 msgstr ""
 
-#: templates/settings.php:100
+#: templates/settings.php:105
 msgid "Days after first coverage before enrolment is forced. Zero means enrol on next login."
 msgstr ""
 
-#: templates/settings.php:106
+#: templates/settings.php:111
 msgid "Disable application passwords"
 msgstr ""
 
-#: templates/settings.php:125
+#: templates/settings.php:130
 msgid "Blocks creating and using application passwords for the selected roles. Use this when interactive 2FA alone is not enough for that role."
 msgstr ""
 
-#: templates/settings.php:132
+#: templates/settings.php:137
 msgid "Save settings"
 msgstr ""
