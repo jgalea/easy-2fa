@@ -4,7 +4,7 @@ Tags: two-factor, 2fa, passkeys, authentication, security
 Requires at least: 6.9
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 0.1.2
+Stable tag: 0.1.3
 License: GPL-3.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -69,6 +69,12 @@ Passkeys need PHP 8.0 or newer. On older PHP the plugin still runs and offers au
 Yes. Settings → Sigil lets you pick exactly which roles are required, and set a grace period so people are prompted to enrol rather than locked out immediately.
 
 == Changelog ==
+
+= 0.1.3 =
+* Fixed the two-factor screen at login: it had no stylesheet, so the method switcher rendered as a bare list and the buttons overlapped.
+* Fixed passkey sign-in, which could never complete. The browser prompt was requested through an authenticated endpoint the logged-out challenge screen could not reach.
+* Email codes are now actually sent when the screen asks for one, and a wrong code no longer invalidates the code already in your inbox.
+* A refresh or a second tab no longer invalidates an outstanding passkey prompt.
 
 = 0.1.2 =
 * Author attribution updated to Jean Galea.
