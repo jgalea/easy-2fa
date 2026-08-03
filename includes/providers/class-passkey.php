@@ -16,6 +16,10 @@ final class Passkey implements Provider {
 
 	private const CHALLENGE_TTL = 300;
 
+	// Enough for a refresh or a second tab, small enough that a page-reload loop
+	// cannot grow the stored payload.
+	private const MAX_OPEN_CHALLENGES = 3;
+
 	private static bool $booted = false;
 
 	public function __construct() {
@@ -113,28 +117,35 @@ final class Passkey implements Provider {
 			return new \WP_Error( 'sigil_passkey_invalid', __( 'Invalid passkey registration data.', 'sigil-2fa' ) );
 		}
 
-		$challenge = $this->get_challenge( $user_id, 'register' );
-		if ( null === $challenge ) {
+		$challenges = $this->get_challenges( $user_id, 'register' );
+		if ( [] === $challenges ) {
 			return new \WP_Error( 'sigil_passkey_challenge', __( 'Registration challenge expired. Please try again.', 'sigil-2fa' ) );
 		}
 
-		try {
-			$webauthn = $this->webauthn();
-			// failIfRootMismatch=false: browser "none" attestation is common without a CA chain.
-			$data = $webauthn->processCreate(
-				$client_data_json,
-				$attestation_object,
-				$challenge,
-				false,
-				true,
-				false
-			);
-		} catch ( \Throwable $e ) {
-			$this->clear_challenge( $user_id, 'register' );
-			return new \WP_Error( 'sigil_passkey_verify', __( 'Passkey registration failed verification.', 'sigil-2fa' ) );
+		$data = null;
+		foreach ( $challenges as $challenge ) {
+			try {
+				$webauthn = $this->webauthn();
+				// failIfRootMismatch=false: browser "none" attestation is common without a CA chain.
+				$data = $webauthn->processCreate(
+					$client_data_json,
+					$attestation_object,
+					$challenge,
+					false,
+					true,
+					false
+				);
+				break;
+			} catch ( \Throwable $e ) {
+				continue;
+			}
 		}
 
 		$this->clear_challenge( $user_id, 'register' );
+
+		if ( null === $data ) {
+			return new \WP_Error( 'sigil_passkey_verify', __( 'Passkey registration failed verification.', 'sigil-2fa' ) );
+		}
 
 		$credential_id = is_string( $data->credentialId ) ? $data->credentialId : '';
 		$public_key    = is_string( $data->credentialPublicKey ) ? $data->credentialPublicKey : '';
@@ -245,41 +256,53 @@ final class Passkey implements Provider {
 			return false;
 		}
 
-		$challenge = $this->get_challenge( $user_id, 'auth' );
-		if ( null === $challenge ) {
+		$challenges = $this->get_challenges( $user_id, 'auth' );
+		if ( [] === $challenges ) {
 			return false;
 		}
 
 		$prev_count = (int) $cred->sign_count;
+		$verified   = null;
 
-		try {
-			$webauthn = $this->webauthn();
-			$webauthn->processGet(
-				$client_data_json,
-				$authenticator_data,
-				$signature,
-				(string) $cred->public_key,
-				$challenge,
-				$prev_count,
-				false,
-				true
-			);
-		} catch ( \Throwable $e ) {
-			$this->clear_challenge( $user_id, 'auth' );
-			if ( $this->is_sign_count_error( $e ) ) {
-				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-				error_log(
-					sprintf(
-						'Sigil: passkey sign count regression for user %d credential %d',
-						$user_id,
-						(int) $cred->id
-					)
+		// The library checks the challenge before it checks the signature or the
+		// counter, so a mismatch here only means this assertion belongs to one of
+		// the user's other open ceremonies. Anything else is a real failure.
+		foreach ( $challenges as $challenge ) {
+			try {
+				$webauthn = $this->webauthn();
+				$webauthn->processGet(
+					$client_data_json,
+					$authenticator_data,
+					$signature,
+					(string) $cred->public_key,
+					$challenge,
+					$prev_count,
+					false,
+					true
 				);
+				$verified = $webauthn;
+				break;
+			} catch ( \Throwable $e ) {
+				if ( $this->is_sign_count_error( $e ) ) {
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+					error_log(
+						sprintf(
+							'Sigil: passkey sign count regression for user %d credential %d',
+							$user_id,
+							(int) $cred->id
+						)
+					);
+					break;
+				}
 			}
+		}
+
+		if ( null === $verified ) {
+			$this->clear_challenge( $user_id, 'auth' );
 			return false;
 		}
 
-		$new_count = $webauthn->getSignatureCounter();
+		$new_count = $verified->getSignatureCounter();
 		if ( ! is_int( $new_count ) ) {
 			$new_count = $prev_count;
 		}
@@ -501,17 +524,65 @@ final class Passkey implements Provider {
 		return 'sigil_pk_' . $purpose . '_' . $user_id;
 	}
 
+	/**
+	 * A user can have more than one ceremony open at once: two tabs on the login
+	 * screen, or a plain refresh. Keeping the last few outstanding challenges means
+	 * the older tab still verifies instead of failing and burning a rate-limit
+	 * attempt on a challenge the newer render overwrote.
+	 */
 	private function store_challenge( int $user_id, string $purpose, string $challenge ): void {
-		set_transient( $this->challenge_key( $user_id, $purpose ), base64_encode( $challenge ), self::CHALLENGE_TTL );
+		$open   = $this->open_challenges( $user_id, $purpose );
+		$open[] = [
+			'c' => base64_encode( $challenge ),
+			'e' => time() + self::CHALLENGE_TTL,
+		];
+
+		set_transient(
+			$this->challenge_key( $user_id, $purpose ),
+			array_slice( $open, -self::MAX_OPEN_CHALLENGES ),
+			self::CHALLENGE_TTL
+		);
 	}
 
-	private function get_challenge( int $user_id, string $purpose ): ?string {
+	/**
+	 * Appending refreshes the transient's own TTL, so each entry carries the expiry
+	 * it was minted with and is dropped on its own schedule.
+	 *
+	 * @return list<array{c: string, e: int}>
+	 */
+	private function open_challenges( int $user_id, string $purpose ): array {
 		$raw = get_transient( $this->challenge_key( $user_id, $purpose ) );
-		if ( ! is_string( $raw ) || '' === $raw ) {
-			return null;
+		if ( ! is_array( $raw ) ) {
+			return [];
 		}
-		$decoded = base64_decode( $raw, true );
-		return false === $decoded || '' === $decoded ? null : $decoded;
+
+		$now  = time();
+		$open = [];
+		foreach ( $raw as $entry ) {
+			if ( is_array( $entry ) && isset( $entry['c'], $entry['e'] ) && is_string( $entry['c'] ) && (int) $entry['e'] > $now ) {
+				$open[] = [
+					'c' => $entry['c'],
+					'e' => (int) $entry['e'],
+				];
+			}
+		}
+
+		return $open;
+	}
+
+	/**
+	 * @return list<string> Outstanding challenges as raw binary, oldest first.
+	 */
+	private function get_challenges( int $user_id, string $purpose ): array {
+		$out = [];
+		foreach ( $this->open_challenges( $user_id, $purpose ) as $entry ) {
+			$decoded = base64_decode( $entry['c'], true );
+			if ( is_string( $decoded ) && '' !== $decoded ) {
+				$out[] = $decoded;
+			}
+		}
+
+		return $out;
 	}
 
 	private function clear_challenge( int $user_id, string $purpose ): void {
