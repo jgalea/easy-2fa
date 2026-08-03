@@ -318,6 +318,8 @@ final class Challenge {
 
 		nocache_headers();
 
+		wp_enqueue_style( 'sigil-login', SIGIL_URL . 'assets/css/login.css', array( 'login' ), SIGIL_VERSION );
+
 		$login_title = __( 'Two-factor authentication', 'sigil-2fa' );
 
 		// login_header/footer exist when the request entered via wp-login.php.

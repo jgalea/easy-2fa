@@ -79,7 +79,7 @@ final class Passkey implements Provider {
 			return;
 		}
 
-		$this->enqueue_script( $user_id );
+		$this->enqueue_script( $user_id, true );
 
 		echo '<div class="sigil-passkey-enrol" data-user-id="' . esc_attr( (string) $user_id ) . '">';
 		echo '<p>' . esc_html__( 'Register a passkey for this account. You will be prompted by your browser or device.', 'sigil-2fa' ) . '</p>';
@@ -174,14 +174,51 @@ final class Passkey implements Provider {
 			return;
 		}
 
-		$this->enqueue_script( $user_id );
+		// The challenge screen runs logged out, so the assertion options cannot come
+		// from an authenticated admin-ajax call. They are minted here and read back
+		// from the page; the assertion travels with the login POST.
+		$options = $this->auth_options( $user_id );
+		if ( null === $options ) {
+			echo '<p>' . esc_html__( 'No passkeys are registered for this account.', 'sigil-2fa' ) . '</p>';
+			return;
+		}
 
-		echo '<div class="sigil-passkey-challenge" data-user-id="' . esc_attr( (string) $user_id ) . '">';
+		$this->enqueue_script( $user_id, false );
+
+		echo '<div class="sigil-passkey-challenge" data-user-id="' . esc_attr( (string) $user_id ) . '" data-options="' . esc_attr( (string) wp_json_encode( $options ) ) . '">';
 		echo '<p>' . esc_html__( 'Use your passkey to continue.', 'sigil-2fa' ) . '</p>';
-		echo '<p><button type="button" class="button button-primary sigil-passkey-authenticate">' . esc_html__( 'Use passkey', 'sigil-2fa' ) . '</button></p>';
+		echo '<p><button type="button" class="button button-primary button-large sigil-passkey-authenticate">' . esc_html__( 'Use passkey', 'sigil-2fa' ) . '</button></p>';
 		echo '<p class="sigil-passkey-status" role="status" aria-live="polite"></p>';
-		echo '<input type="hidden" name="sigil_passkey_assertion" id="sigil-passkey-assertion" value="" />';
+		echo '<input type="hidden" name="passkey_assertion" id="sigil-passkey-assertion" value="" />';
 		echo '</div>';
+	}
+
+	/**
+	 * Build the WebAuthn assertion options and store the matching challenge.
+	 *
+	 * @return \stdClass|null Null when the account has no passkeys or the library fails.
+	 */
+	private function auth_options( int $user_id ): ?\stdClass {
+		$ids = [];
+		foreach ( Credentials::for_user( $user_id ) as $row ) {
+			$ids[] = $row->credential_id;
+		}
+
+		if ( [] === $ids ) {
+			return null;
+		}
+
+		try {
+			$webauthn  = $this->webauthn();
+			$args      = $webauthn->getGetArgs( $ids, self::CHALLENGE_TTL, true, true, true, true, true, 'preferred' );
+			$challenge = $webauthn->getChallenge()->getBinaryString();
+		} catch ( \Throwable $e ) {
+			return null;
+		}
+
+		$this->store_challenge( $user_id, 'auth', $challenge );
+
+		return $args instanceof \stdClass ? $args : null;
 	}
 
 	/**
@@ -192,10 +229,12 @@ final class Passkey implements Provider {
 			return false;
 		}
 
-		$client_data_json   = $this->decode_binary_field( $input['clientDataJSON'] ?? '' );
-		$authenticator_data = $this->decode_binary_field( $input['authenticatorData'] ?? '' );
-		$signature          = $this->decode_binary_field( $input['signature'] ?? '' );
-		$raw_id             = $this->decode_binary_field( $input['id'] ?? ( $input['rawId'] ?? '' ) );
+		$assertion = $this->assertion_fields( $input );
+
+		$client_data_json   = $this->decode_binary_field( $assertion['clientDataJSON'] );
+		$authenticator_data = $this->decode_binary_field( $assertion['authenticatorData'] );
+		$signature          = $this->decode_binary_field( $assertion['signature'] );
+		$raw_id             = $this->decode_binary_field( $assertion['id'] );
 
 		if ( '' === $client_data_json || '' === $authenticator_data || '' === $signature || '' === $raw_id ) {
 			return false;
@@ -267,6 +306,26 @@ final class Passkey implements Provider {
 		return true;
 	}
 
+	/**
+	 * The login form posts the whole assertion as one JSON field, because the
+	 * challenge screen has no logged-in session to POST discrete fields against.
+	 *
+	 * @param array<string, mixed> $input
+	 * @return array{id: string, clientDataJSON: string, authenticatorData: string, signature: string}
+	 */
+	private function assertion_fields( array $input ): array {
+		$raw = isset( $input['passkey_assertion'] ) && is_string( $input['passkey_assertion'] )
+			? json_decode( $input['passkey_assertion'], true )
+			: null;
+
+		$out = [];
+		foreach ( [ 'id', 'clientDataJSON', 'authenticatorData', 'signature' ] as $key ) {
+			$out[ $key ] = is_array( $raw ) && isset( $raw[ $key ] ) && is_string( $raw[ $key ] ) ? $raw[ $key ] : '';
+		}
+
+		return $out;
+	}
+
 	public function unenrol( int $user_id ): void {
 		if ( $user_id <= 0 ) {
 			return;
@@ -278,8 +337,6 @@ final class Passkey implements Provider {
 	private function register_hooks(): void {
 		add_action( 'wp_ajax_sigil_passkey_register_options', [ $this, 'ajax_register_options' ] );
 		add_action( 'wp_ajax_sigil_passkey_register', [ $this, 'ajax_register' ] );
-		add_action( 'wp_ajax_sigil_passkey_auth_options', [ $this, 'ajax_auth_options' ] );
-		add_action( 'wp_ajax_sigil_passkey_auth', [ $this, 'ajax_auth' ] );
 	}
 
 	public function ajax_register_options(): void {
@@ -355,85 +412,6 @@ final class Passkey implements Provider {
 		wp_send_json_success( [ 'message' => __( 'Passkey registered.', 'sigil-2fa' ) ] );
 	}
 
-	public function ajax_auth_options(): void {
-		$this->ajax_guard();
-
-		$user_id = $this->request_user_id();
-		if ( null === $user_id || ! $this->user_can_manage( $user_id ) ) {
-			// During login challenge the user may not be fully authenticated; allow if they can read themselves after password step.
-			// Still require a logged-in user or matching capability via ajax_guard (is_user_logged_in).
-			if ( null === $user_id || get_current_user_id() !== $user_id ) {
-				wp_send_json_error( [ 'message' => __( 'You are not allowed to use this passkey challenge.', 'sigil-2fa' ) ], 403 );
-			}
-		}
-
-		if ( ! $this->is_available() ) {
-			wp_send_json_error( [ 'message' => __( 'Passkeys are not available in this environment.', 'sigil-2fa' ) ], 400 );
-		}
-
-		$ids = [];
-		foreach ( Credentials::for_user( $user_id ) as $row ) {
-			$ids[] = $row->credential_id;
-		}
-
-		if ( [] === $ids ) {
-			wp_send_json_error( [ 'message' => __( 'No passkeys are registered for this account.', 'sigil-2fa' ) ], 400 );
-		}
-
-		try {
-			$webauthn = $this->webauthn();
-			$args     = $webauthn->getGetArgs(
-				$ids,
-				self::CHALLENGE_TTL,
-				true,
-				true,
-				true,
-				true,
-				true,
-				'preferred'
-			);
-			$challenge = $webauthn->getChallenge()->getBinaryString();
-		} catch ( \Throwable $e ) {
-			wp_send_json_error( [ 'message' => __( 'Could not start passkey authentication.', 'sigil-2fa' ) ], 500 );
-		}
-
-		$this->store_challenge( $user_id, 'auth', $challenge );
-
-		wp_send_json_success( $args );
-	}
-
-	public function ajax_auth(): void {
-		$this->ajax_guard();
-
-		$user_id = $this->request_user_id();
-		if ( null === $user_id ) {
-			wp_send_json_error( [ 'message' => __( 'Invalid user.', 'sigil-2fa' ) ], 400 );
-		}
-
-		if ( get_current_user_id() !== $user_id && ! $this->user_can_manage( $user_id ) ) {
-			wp_send_json_error( [ 'message' => __( 'You are not allowed to use this passkey challenge.', 'sigil-2fa' ) ], 403 );
-		}
-
-		// The nonce is verified by ajax_guard() above via check_ajax_referer, and the
-		// caller is checked against user_can_manage(). These four values are base64 and
-		// JSON blobs the WebAuthn library parses and verifies cryptographically; running
-		// them through sanitize_text_field would corrupt the assertion payload.
-		// phpcs:disable WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-		$input = [
-			'clientDataJSON'    => isset( $_POST['clientDataJSON'] ) ? wp_unslash( (string) $_POST['clientDataJSON'] ) : '',
-			'authenticatorData' => isset( $_POST['authenticatorData'] ) ? wp_unslash( (string) $_POST['authenticatorData'] ) : '',
-			'signature'         => isset( $_POST['signature'] ) ? wp_unslash( (string) $_POST['signature'] ) : '',
-			'id'                => isset( $_POST['id'] ) ? wp_unslash( (string) $_POST['id'] ) : '',
-		];
-		// phpcs:enable WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-
-		if ( ! $this->validate( $user_id, $input ) ) {
-			wp_send_json_error( [ 'message' => __( 'Passkey authentication failed.', 'sigil-2fa' ) ], 400 );
-		}
-
-		wp_send_json_success( [ 'message' => __( 'Passkey verified.', 'sigil-2fa' ) ] );
-	}
-
 	private function ajax_guard(): void {
 		if ( ! is_user_logged_in() ) {
 			wp_send_json_error( [ 'message' => __( 'You must be logged in.', 'sigil-2fa' ) ], 401 );
@@ -455,7 +433,11 @@ final class Passkey implements Provider {
 		return current_user_can( 'edit_user', $user_id );
 	}
 
-	private function enqueue_script( int $user_id ): void {
+	/**
+	 * Registration talks to admin-ajax; the login challenge does not, so the
+	 * logged-out screen is not handed an ajax URL and a live nonce it never uses.
+	 */
+	private function enqueue_script( int $user_id, bool $with_ajax ): void {
 		wp_enqueue_script(
 			'sigil-passkey',
 			SIGIL_URL . 'assets/js/passkey.js',
@@ -464,18 +446,23 @@ final class Passkey implements Provider {
 			true
 		);
 
+		$data = [];
+		if ( $with_ajax ) {
+			$data['ajaxUrl'] = admin_url( 'admin-ajax.php' );
+			$data['nonce']   = wp_create_nonce( 'sigil_passkey' );
+			$data['userId']  = $user_id;
+		}
+
 		wp_localize_script(
 			'sigil-passkey',
 			'sigilPasskey',
-			[
-				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-				'nonce'   => wp_create_nonce( 'sigil_passkey' ),
-				'userId'  => $user_id,
-				'i18n'    => [
+			$data + [
+				'i18n' => [
 					'unsupported'   => __( 'Passkeys are not supported in this browser or context. Use HTTPS and a modern browser.', 'sigil-2fa' ),
 					'registering'   => __( 'Follow the browser prompt to register your passkey…', 'sigil-2fa' ),
 					'registered'    => __( 'Passkey registered.', 'sigil-2fa' ),
 					'authenticating'=> __( 'Follow the browser prompt to use your passkey…', 'sigil-2fa' ),
+					'verifying'     => __( 'Verifying…', 'sigil-2fa' ),
 					'failed'        => __( 'Something went wrong. Please try again.', 'sigil-2fa' ),
 				],
 			]

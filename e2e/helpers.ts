@@ -1,5 +1,11 @@
 import { createHmac } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import { Page, expect } from '@playwright/test';
+
+// Clears every enrolled method for a user. Also exercises the recovery CLI.
+export function resetTwoFactor(user = 'admin') {
+	execFileSync('npx', ['@wordpress/env', 'run', 'cli', 'wp', 'sigil', 'reset', user], { stdio: 'ignore' });
+}
 
 const B32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 

@@ -55,50 +55,35 @@
 			.replace(/=+$/g, '');
 	}
 
-	function reviveBinaryFields(value) {
-		if (!value || typeof value !== 'object') {
-			return value;
+	function decodeCredentialIds(list) {
+		if (!Array.isArray(list)) {
+			return;
 		}
-		if (Array.isArray(value)) {
-			for (var i = 0; i < value.length; i++) {
-				value[i] = reviveBinaryFields(value[i]);
-			}
-			return value;
-		}
-		var keys = Object.keys(value);
-		for (var k = 0; k < keys.length; k++) {
-			var key = keys[k];
-			var item = value[key];
-			if (typeof item === 'string' && (
-				key === 'challenge' ||
-				key === 'id' ||
-				key === 'userHandle' ||
-				key === 'x5c' ||
-				key.endsWith('Id') ||
-				key === 'authData' ||
-				key === 'signature' ||
-				key === 'clientDataJSON' ||
-				key === 'attestationObject' ||
-				key === 'authenticatorData'
-			)) {
-				// Only convert fields that look like base64url binary, not plain strings like "public-key".
-				if (/^[A-Za-z0-9_-]+=*$/.test(item) && item.length >= 16) {
-					value[key] = base64UrlToBuffer(item);
-					continue;
-				}
-			}
-			if (key === 'user' && item && typeof item.id === 'string') {
+		list.forEach(function (item) {
+			if (item && typeof item.id === 'string') {
 				item.id = base64UrlToBuffer(item.id);
 			}
-			if (key === 'excludeCredentials' || key === 'allowCredentials') {
-				reviveBinaryFields(item);
-				continue;
-			}
-			if (item && typeof item === 'object') {
-				reviveBinaryFields(item);
-			}
+		});
+	}
+
+	/**
+	 * The server sends the WebAuthn options with every binary field base64url
+	 * encoded. Only these fields are binary; everything else stays a string.
+	 */
+	function decodeOptions(options) {
+		var publicKey = options && options.publicKey ? options.publicKey : options;
+		if (!publicKey) {
+			return null;
 		}
-		return value;
+		if (typeof publicKey.challenge === 'string') {
+			publicKey.challenge = base64UrlToBuffer(publicKey.challenge);
+		}
+		if (publicKey.user && typeof publicKey.user.id === 'string') {
+			publicKey.user.id = base64UrlToBuffer(publicKey.user.id);
+		}
+		decodeCredentialIds(publicKey.excludeCredentials);
+		decodeCredentialIds(publicKey.allowCredentials);
+		return publicKey;
 	}
 
 	function postForm(action, fields) {
@@ -136,9 +121,10 @@
 				if (!json || !json.success) {
 					throw new Error((json && json.data && json.data.message) || i18n('failed'));
 				}
-				var createOptions = reviveBinaryFields(json.data);
-				// Server returns the PublicKeyCredentialCreationOptions root; navigator expects { publicKey: ... }.
-				var publicKey = createOptions.publicKey ? createOptions.publicKey : createOptions;
+				var publicKey = decodeOptions(json.data);
+				if (!publicKey) {
+					throw new Error(i18n('failed'));
+				}
 				return navigator.credentials.create({ publicKey: publicKey });
 			})
 			.then(function (cred) {
@@ -169,45 +155,48 @@
 			});
 	}
 
+	/**
+	 * The login challenge runs logged out, so the options are embedded in the page
+	 * and the assertion rides along with the login form POST.
+	 */
 	function authenticate(root) {
 		if (!isSupported()) {
 			setStatus(root, i18n('unsupported'));
 			return;
 		}
 
+		var publicKey = null;
+		try {
+			publicKey = decodeOptions(JSON.parse(root.getAttribute('data-options') || 'null'));
+		} catch (err) {
+			publicKey = null;
+		}
+		if (!publicKey) {
+			setStatus(root, i18n('failed'));
+			return;
+		}
+
 		setStatus(root, i18n('authenticating'));
 
-		postForm('sigil_passkey_auth_options', {})
-			.then(function (json) {
-				if (!json || !json.success) {
-					throw new Error((json && json.data && json.data.message) || i18n('failed'));
-				}
-				var getOptions = reviveBinaryFields(json.data);
-				var publicKey = getOptions.publicKey ? getOptions.publicKey : getOptions;
-				return navigator.credentials.get({ publicKey: publicKey });
-			})
+		navigator.credentials
+			.get({ publicKey: publicKey })
 			.then(function (cred) {
 				if (!cred || !cred.response) {
 					throw new Error(i18n('failed'));
 				}
-				var payload = {
+				var hidden = root.querySelector('#sigil-passkey-assertion');
+				var form = root.closest('form');
+				if (!hidden || !form) {
+					throw new Error(i18n('failed'));
+				}
+				hidden.value = JSON.stringify({
 					id: bufferToBase64Url(cred.rawId),
 					clientDataJSON: bufferToBase64Url(cred.response.clientDataJSON),
 					authenticatorData: bufferToBase64Url(cred.response.authenticatorData),
 					signature: bufferToBase64Url(cred.response.signature)
-				};
-				var hidden = root.querySelector('#sigil-passkey-assertion');
-				if (hidden) {
-					hidden.value = JSON.stringify(payload);
-				}
-				return postForm('sigil_passkey_auth', payload);
-			})
-			.then(function (json) {
-				if (!json || !json.success) {
-					throw new Error((json && json.data && json.data.message) || i18n('failed'));
-				}
-				setStatus(root, (json.data && json.data.message) || '');
-				root.dispatchEvent(new window.CustomEvent('sigil:passkey-authenticated', { bubbles: true }));
+				});
+				setStatus(root, i18n('verifying'));
+				form.submit();
 			})
 			.catch(function (err) {
 				setStatus(root, (err && err.message) || i18n('failed'));
@@ -227,8 +216,10 @@
 		}
 		var authBtn = target.closest('.sigil-passkey-authenticate');
 		if (authBtn) {
-			var authRoot = authBtn.closest('.sigil-passkey-challenge') || document;
-			authenticate(authRoot);
+			var authRoot = authBtn.closest('.sigil-passkey-challenge');
+			if (authRoot) {
+				authenticate(authRoot);
+			}
 		}
 	}
 

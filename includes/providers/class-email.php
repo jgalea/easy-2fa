@@ -79,6 +79,13 @@ final class Email implements Provider {
 	}
 
 	public function render_challenge( int $user_id ): void {
+		// Rendering the screen is what triggers the send, but only when there is no
+		// live code: a re-render after a wrong code must not invalidate the code the
+		// user is reading out of their inbox.
+		if ( false === get_transient( self::TRANSIENT_KEY . $user_id ) ) {
+			$this->send_code( $user_id );
+		}
+
 		echo '<p>' . esc_html__( 'Enter the six-digit code we sent to your email.', 'sigil-2fa' ) . '</p>';
 		echo '<p><label for="sigil-email-code">' . esc_html__( 'Email code', 'sigil-2fa' ) . '</label> ';
 		echo '<input type="text" name="code" id="sigil-email-code" inputmode="numeric" pattern="[0-9]{6}" autocomplete="one-time-code" maxlength="6" required /></p>';
@@ -113,6 +120,10 @@ final class Email implements Provider {
 		}
 
 		delete_transient( self::TRANSIENT_KEY . $user_id );
+		// The cooldown goes with the code it throttled. Leaving it would block the
+		// next sign-in from sending, and that screen would ask for a code that no
+		// longer exists.
+		delete_transient( self::COOLDOWN_KEY . $user_id );
 		delete_user_meta( $user_id, self::DEBUG_META );
 
 		return true;
@@ -140,16 +151,6 @@ final class Email implements Provider {
 		}
 
 		$code = str_pad( (string) random_int( 0, 999999 ), 6, '0', STR_PAD_LEFT );
-
-		set_transient( self::TRANSIENT_KEY . $user_id, $this->hash_code( $code ), self::CODE_TTL );
-		set_transient( self::COOLDOWN_KEY . $user_id, 1, self::RESEND_COOLDOWN );
-
-		// Test-suite-only plaintext mirror. WP_TESTS_DOMAIN is defined by the WordPress
-		// test bootstrap and by nothing else. WP_DEBUG deliberately does NOT gate this:
-		// plenty of production sites run with it on, and this would persist a live OTP.
-		if ( defined( 'WP_TESTS_DOMAIN' ) ) {
-			update_user_meta( $user_id, self::DEBUG_META, $code );
-		}
 
 		$site_name = wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES );
 		if ( '' === $site_name ) {
@@ -191,7 +192,24 @@ final class Email implements Provider {
 		remove_filter( 'wp_mail_from', $from_filter, 999 );
 		remove_filter( 'wp_mail_from_name', $from_name_filter, 999 );
 
-		return $sent;
+		// Arm the code only once the mail is away. A failed send that left a code and
+		// a cooldown behind would ask the user for something they never got, and block
+		// the retry that would have fixed it.
+		if ( ! $sent ) {
+			return false;
+		}
+
+		set_transient( self::TRANSIENT_KEY . $user_id, $this->hash_code( $code ), self::CODE_TTL );
+		set_transient( self::COOLDOWN_KEY . $user_id, 1, self::RESEND_COOLDOWN );
+
+		// Test-suite-only plaintext mirror. WP_TESTS_DOMAIN is defined by the WordPress
+		// test bootstrap and by nothing else. WP_DEBUG deliberately does NOT gate this:
+		// plenty of production sites run with it on, and this would persist a live OTP.
+		if ( defined( 'WP_TESTS_DOMAIN' ) ) {
+			update_user_meta( $user_id, self::DEBUG_META, $code );
+		}
+
+		return true;
 	}
 
 	private function hash_code( string $code ): string {

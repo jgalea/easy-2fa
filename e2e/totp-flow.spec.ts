@@ -1,11 +1,8 @@
 import { test, expect } from '@playwright/test';
-import { execFileSync } from 'node:child_process';
-import { login, logout, totp } from './helpers';
+import { resetTwoFactor, login, logout, totp } from './helpers';
 
-// Each run starts from a clean slate. This also exercises the recovery CLI.
-test.beforeEach(() => {
-	execFileSync('npx', ['@wordpress/env', 'run', 'cli', 'wp', '2fa', 'reset', 'admin'], { stdio: 'ignore' });
-});
+// Each run starts from a clean slate.
+test.beforeEach(() => resetTwoFactor());
 
 // The real go/no-go: a human enrols TOTP, logs out, is challenged, and gets back in.
 test('enrol TOTP, get challenged at login, and pass it', async ({ page }) => {

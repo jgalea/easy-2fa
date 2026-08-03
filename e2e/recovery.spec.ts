@@ -1,12 +1,7 @@
 import { test, expect } from '@playwright/test';
-import { execFileSync } from 'node:child_process';
-import { login, logout, totp } from './helpers';
+import { resetTwoFactor, login, logout, totp } from './helpers';
 
-function reset() {
-	execFileSync('npx', ['@wordpress/env', 'run', 'cli', 'wp', '2fa', 'reset', 'admin'], { stdio: 'ignore' });
-}
-
-test.beforeEach(reset);
+test.beforeEach(() => resetTwoFactor());
 
 // A locked-out user must be able to get back in. This is the make-or-break flow.
 test('backup code gets you in when the authenticator is gone, and CLI reset clears 2FA', async ({ page }) => {
@@ -28,7 +23,7 @@ test('backup code gets you in when the authenticator is gone, and CLI reset clea
 	// Log in, switch to the backup-code method, and use one.
 	await login(page);
 	await expect(page.locator('body')).toContainText(/verification|authenticator/i);
-	const switcher = page.locator('form.sigil-challenge__method-form button', { hasText: /backup/i });
+	const switcher = page.locator('form.sigil-challenge__methods button', { hasText: /backup/i });
 	if (await switcher.count()) await switcher.first().click();
 	await page.fill('#sigil-challenge-form input[name="code"]', backup!.replace(/\s/g, ''));
 	await page.locator('#sigil-authenticate').click();
@@ -37,7 +32,7 @@ test('backup code gets you in when the authenticator is gone, and CLI reset clea
 	await expect(page.locator('#wpadminbar')).toBeVisible();
 
 	// CLI reset is the last-resort escape hatch: after it, no second factor at all.
-	reset();
+	resetTwoFactor();
 	await logout(page);
 	await login(page);
 	await page.goto('/wp-admin/');
