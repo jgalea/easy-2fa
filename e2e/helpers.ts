@@ -39,8 +39,24 @@ export function totp(secret: string, at: number = Date.now()): string {
 
 export async function login(page: Page, user = 'admin', pass = 'password') {
 	await page.goto('/wp-login.php');
-	await page.fill('#user_login', user);
-	await page.fill('#user_pass', pass);
+
+	const username = page.locator('#user_login');
+	const password = page.locator('#user_pass');
+
+	await username.waitFor({ state: 'visible' });
+	await password.waitFor({ state: 'visible' });
+
+	await username.fill(user);
+	await password.fill(pass);
+
+	// Check the form holds what we typed before submitting it. On a slow render
+	// the second fill has landed in the first field, leaving the username set to
+	// "password" and the password empty, and submitting that produces a 90s wait
+	// for a screen that was never going to appear. Asserting here turns it into
+	// an immediate, obvious failure.
+	await expect(username).toHaveValue(user);
+	await expect(password).toHaveValue(pass);
+
 	await page.click('#wp-submit');
 
 	// Wait for the submit to land before anyone navigates away: a following
