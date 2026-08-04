@@ -8,6 +8,8 @@ defined( 'ABSPATH' ) || exit;
 
 final class Providers {
 
+	public const PREFERENCE_META = '_sigil_preferred_method';
+
 	private static ?Providers $instance = null;
 
 	/** @var array<string, Provider> */
@@ -93,9 +95,64 @@ final class Providers {
 		return array() !== $this->enrolled_for( $user_id );
 	}
 
+	/**
+	 * The method to offer first.
+	 *
+	 * A user's own choice wins over the plugin's ordering. Someone who keeps a
+	 * passkey for their laptop and an authenticator for their phone knows which
+	 * one they reach for, and being handed the other one every time is a small
+	 * tax paid on every single sign-in.
+	 *
+	 * The choice is honoured only while it names something they can actually
+	 * use, so a stale preference falls back rather than presenting a method that
+	 * is gone.
+	 */
 	public function preferred_for( int $user_id ): ?Provider {
 		$enrolled = $this->enrolled_for( $user_id );
-		return $enrolled[0] ?? null;
+		if ( array() === $enrolled ) {
+			return null;
+		}
+
+		$chosen = self::preference( $user_id );
+		if ( '' !== $chosen ) {
+			foreach ( $enrolled as $provider ) {
+				if ( $provider->id() === $chosen ) {
+					return $provider;
+				}
+			}
+		}
+
+		return $enrolled[0];
+	}
+
+	public static function preference( int $user_id ): string {
+		$raw = get_user_meta( $user_id, self::PREFERENCE_META, true );
+
+		return is_string( $raw ) ? sanitize_key( $raw ) : '';
+	}
+
+	/**
+	 * @return true|\WP_Error
+	 */
+	public static function set_preference( int $user_id, string $provider_id ) {
+		$provider_id = sanitize_key( $provider_id );
+
+		if ( '' === $provider_id ) {
+			delete_user_meta( $user_id, self::PREFERENCE_META );
+			return true;
+		}
+
+		foreach ( self::instance()->enrolled_for( $user_id ) as $provider ) {
+			if ( $provider->id() === $provider_id ) {
+				update_user_meta( $user_id, self::PREFERENCE_META, $provider_id );
+				return true;
+			}
+		}
+
+		return new \WP_Error(
+			'sigil_not_enrolled',
+			__( 'You can only prefer a method you have set up.', 'sigil-2fa' )
+		);
 	}
 
 	private function load_core_providers(): void {

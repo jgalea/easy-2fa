@@ -15,7 +15,7 @@ class Test_Pro_Coverage extends WP_UnitTestCase {
 			$this->markTestSkipped( 'pro add-on not installed' );
 		}
 
-		foreach ( array( 'class-zero-setup', 'class-always-email', 'class-bypass', 'class-branding' ) as $file ) {
+		foreach ( array( 'class-zero-setup', 'class-always-email', 'class-bypass', 'class-branding', 'class-audit' ) as $file ) {
 			require_once SIGIL_DIR . 'pro/' . $file . '.php';
 		}
 
@@ -147,6 +147,39 @@ class Test_Pro_Coverage extends WP_UnitTestCase {
 		$this->assertIsArray( $log );
 		$this->assertSame( 'bypass', $log[0]['action'] );
 		$this->assertSame( $actor, (int) $log[0]['actor'] );
+	}
+
+	// The record was already being kept and nothing read it back. The question it
+	// answers is asked after something has gone wrong.
+	public function test_the_history_shows_both_kinds_of_entry(): void {
+		$actor = $this->manager();
+		$user  = self::factory()->user->create();
+		\Sigil\Store::set_method( $user, 'totp', array( 'secret' => 'x' ) );
+
+		\Sigil\Recovery::reset_user( $user, $actor );
+		\Easy2FA\Pro\Bypass::grant_for( $user, $actor );
+
+		$entries = \Easy2FA\Pro\Audit::entries( $user );
+
+		$this->assertCount( 2, $entries, 'one reset and one excused sign-in' );
+		$this->assertSame( 'bypass', $entries[0]['action'] );
+		$this->assertSame( 'reset', $entries[1]['action'] );
+		$this->assertSame( $actor, $entries[0]['actor'] );
+	}
+
+	// Entries written before the log recorded a kind are all resets.
+	public function test_an_entry_from_before_this_existed_reads_as_a_reset(): void {
+		$user = self::factory()->user->create();
+		update_user_meta( $user, '_sigil_reset_log', array( array( 'actor' => 3, 'time' => time() ) ) );
+
+		$entries = \Easy2FA\Pro\Audit::entries( $user );
+
+		$this->assertCount( 1, $entries );
+		$this->assertSame( 'reset', $entries[0]['action'] );
+	}
+
+	public function test_an_account_with_no_history_has_nothing_to_show(): void {
+		$this->assertSame( array(), \Easy2FA\Pro\Audit::entries( self::factory()->user->create() ) );
 	}
 
 	public function test_the_challenge_screen_takes_the_site_wording(): void {

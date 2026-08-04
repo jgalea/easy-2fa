@@ -24,6 +24,7 @@ final class Enrolment {
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		add_action( 'admin_post_sigil_enrol', array( $this, 'handle_enrol_post' ) );
 		add_action( 'admin_post_sigil_remove_method', array( $this, 'handle_remove_post' ) );
+		add_action( 'admin_post_sigil_prefer_method', array( $this, 'handle_prefer_post' ) );
 		add_action( 'admin_post_sigil_regenerate_backup', array( $this, 'handle_regenerate_backup_post' ) );
 		add_action( 'show_user_profile', array( $this, 'render_profile_section' ) );
 		add_action( 'edit_user_profile', array( $this, 'render_profile_section' ) );
@@ -250,6 +251,10 @@ final class Enrolment {
 			Store::remove_method( $user_id, $provider_id );
 		}
 
+		if ( Providers::preference( $user_id ) === $provider_id ) {
+			Providers::set_preference( $user_id, '' );
+		}
+
 		do_action( 'sigil_methods_changed', $user_id );
 
 		return true;
@@ -302,6 +307,24 @@ final class Enrolment {
 		}
 
 		$this->redirect_with_status( $user_id, 'success', 'removed', '', $provider_id );
+	}
+
+	public function handle_prefer_post(): void {
+		$user_id     = isset( $_POST['user_id'] ) ? absint( wp_unslash( $_POST['user_id'] ) ) : 0;
+		$provider_id = isset( $_POST['provider'] ) ? sanitize_key( wp_unslash( (string) $_POST['provider'] ) ) : '';
+
+		check_admin_referer( 'sigil_prefer_' . $user_id . '_' . $provider_id );
+
+		if ( ! $this->can_manage_methods( $user_id ) ) {
+			wp_die( esc_html__( 'You are not allowed to change two-factor methods for this user.', 'sigil-2fa' ), '', array( 'response' => 403 ) );
+		}
+
+		$result = Providers::set_preference( $user_id, $provider_id );
+		if ( is_wp_error( $result ) ) {
+			$this->redirect_with_status( $user_id, 'error', $result->get_error_code(), $result->get_error_message(), $provider_id );
+		}
+
+		$this->redirect_with_status( $user_id, 'success', 'preferred', '', $provider_id );
 	}
 
 	public function handle_regenerate_backup_post(): void {

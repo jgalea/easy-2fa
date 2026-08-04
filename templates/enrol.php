@@ -51,6 +51,9 @@ $post_url      = admin_url( 'admin-post.php' );
 				case 'removed':
 					echo esc_html__( 'Authentication method removed.', 'sigil-2fa' );
 					break;
+				case 'preferred':
+					echo esc_html__( 'You will be asked for this method first from now on.', 'sigil-2fa' );
+					break;
 				default:
 					echo esc_html__( 'Saved.', 'sigil-2fa' );
 			}
@@ -174,6 +177,19 @@ $post_url      = admin_url( 'admin-post.php' );
 					<p class="sigil-enrol__enrolled">
 						<?php echo esc_html__( 'This method is set up on your account.', 'sigil-2fa' ); ?>
 					</p>
+
+					<?php if ( \Sigil\Providers::preference( $user_id ) === $active_provider->id() ) : ?>
+						<p class="description"><?php echo esc_html__( 'This is the method you are asked for first.', 'sigil-2fa' ); ?></p>
+					<?php elseif ( count( $methods ) > 1 ) : ?>
+						<form method="post" action="<?php echo esc_url( $post_url ); ?>" class="sigil-enrol__form sigil-enrol__form--prefer">
+							<input type="hidden" name="action" value="sigil_prefer_method" />
+							<input type="hidden" name="user_id" value="<?php echo esc_attr( (string) $user_id ); ?>" />
+							<input type="hidden" name="provider" value="<?php echo esc_attr( $active_provider->id() ); ?>" />
+							<?php wp_nonce_field( 'sigil_prefer_' . $user_id . '_' . $active_provider->id() ); ?>
+							<button type="submit" class="button"><?php echo esc_html__( 'Ask for this one first', 'sigil-2fa' ); ?></button>
+						</form>
+					<?php endif; ?>
+
 					<form method="post" action="<?php echo esc_url( $post_url ); ?>" class="sigil-enrol__form sigil-enrol__form--remove">
 						<input type="hidden" name="action" value="sigil_remove_method" />
 						<input type="hidden" name="user_id" value="<?php echo esc_attr( (string) $user_id ); ?>" />

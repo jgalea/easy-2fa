@@ -43,7 +43,7 @@ function sigil_uninstall(): void {
 	$prefix = is_multisite() ? $wpdb->base_prefix : $wpdb->prefix;
 	$wpdb->query( "DROP TABLE IF EXISTS {$prefix}sigil_credentials" );
 
-	foreach ( array( '_sigil_methods', '_sigil_deadline', '_sigil_reset_log', '_sigil_email_debug_code' ) as $meta_key ) {
+	foreach ( array( '_sigil_methods', '_sigil_deadline', '_sigil_reset_log', '_sigil_email_debug_code', '_sigil_preferred_method' ) as $meta_key ) {
 		$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->usermeta} WHERE meta_key = %s", $meta_key ) );
 	}
 
