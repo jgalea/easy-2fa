@@ -43,11 +43,16 @@ export async function login(page: Page, user = 'admin', pass = 'password') {
 	await page.fill('#user_pass', pass);
 	await page.click('#wp-submit');
 
-	// Wait for the submit to land before anyone navigates away. Without this a
-	// following goto() can abort the login POST and the auth cookie is never
-	// set, which is fast enough to hide locally and fails on slower CI. Not a
-	// URL check: with 2FA enrolled the challenge screen keeps the same URL.
-	await page.waitForLoadState('networkidle');
+	// Wait for the submit to land before anyone navigates away: a following
+	// goto() can abort the login POST and the auth cookie is never set, which is
+	// fast enough to hide locally and fails on slower CI.
+	//
+	// Waits on what the submit produces rather than on networkidle, which never
+	// settles on a site with background admin requests, and not on a URL change,
+	// because the 2FA challenge keeps the login form's URL.
+	await page.waitForSelector('#wpadminbar, #sigil-challenge-form, #login_error, .sigil-challenge', {
+		timeout: 30_000,
+	});
 }
 
 export async function logout(page: Page) {
