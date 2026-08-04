@@ -130,5 +130,45 @@ final class Schema {
 			);
 			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
 		}
+
+		self::reconcile_sign_counts( $site_ids );
+	}
+
+	/**
+	 * Where the same authenticator was registered on two sites, INSERT IGNORE
+	 * keeps whichever row was reached first, which may hold the lower signature
+	 * counter. Raising each to the highest value seen keeps the clone check as
+	 * informed after the merge as it was before.
+	 *
+	 * @param list<int|string> $site_ids
+	 *
+	 * phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery
+	 * phpcs:disable WordPress.DB.DirectDatabaseQuery.NoCaching
+	 * phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+	 * phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter
+	 */
+	private static function reconcile_sign_counts( array $site_ids ): void {
+		global $wpdb;
+
+		$network_table = self::table();
+
+		foreach ( $site_ids as $site_id ) {
+			$legacy_table = $wpdb->get_blog_prefix( (int) $site_id ) . 'sigil_credentials';
+			if ( $legacy_table === $network_table ) {
+				continue;
+			}
+
+			$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $legacy_table ) );
+			if ( $exists !== $legacy_table ) {
+				continue;
+			}
+
+			$wpdb->query(
+				"UPDATE {$network_table} AS n
+				 JOIN {$legacy_table} AS o ON o.credential_id = n.credential_id
+				 SET n.sign_count = o.sign_count
+				 WHERE o.sign_count > n.sign_count"
+			);
+		}
 	}
 }
