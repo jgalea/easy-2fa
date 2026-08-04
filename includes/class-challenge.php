@@ -85,10 +85,26 @@ final class Challenge {
 		$ip_key   = self::ip_rate_key();
 
 		if ( Rate_Limit::blocked( $user_key ) || Rate_Limit::blocked( $ip_key ) ) {
-			return new \WP_Error(
+			// Nothing was guessed, so the token survives for a later retry.
+			return self::retryable(
 				'sigil_rate_limited',
-				__( 'Too many failed attempts. Please wait before trying again.', 'sigil-2fa' )
+				__( 'Too many failed attempts. Please wait before trying again.', 'sigil-2fa' ),
+				$token
 			);
+		}
+
+		// Claim the token before checking anything, and only continue if this
+		// request is the one that took it.
+		//
+		// The attempt counters alone cannot hold a line here: reading, adding one
+		// and writing back is not atomic, so a burst of parallel guesses all
+		// observe the same count and overwrite each other's increment, and the
+		// ceiling becomes the attacker's concurrency rather than MAX_ATTEMPTS.
+		// One guess per token makes that structural instead of arithmetic, and it
+		// is also what stops two simultaneous completions of the same token both
+		// issuing a session.
+		if ( ! delete_transient( self::transient_key( $token ) ) ) {
+			return new \WP_Error( 'sigil_invalid_token', __( 'This verification session has expired. Please log in again.', 'sigil-2fa' ) );
 		}
 
 		$provider_id = sanitize_key( $provider_id );
@@ -96,20 +112,62 @@ final class Challenge {
 		if ( null === $provider || ! $provider->is_enrolled( $user_id ) ) {
 			Rate_Limit::hit( $user_key );
 			Rate_Limit::hit( $ip_key );
-			return new \WP_Error( 'sigil_invalid_method', __( 'Verification failed.', 'sigil-2fa' ) );
+			return self::retryable( 'sigil_invalid_method', __( 'Verification failed.', 'sigil-2fa' ), self::reissue( $payload ) );
 		}
 
 		if ( ! $provider->validate( $user_id, $input ) ) {
 			Rate_Limit::hit( $user_key );
 			Rate_Limit::hit( $ip_key );
-			return new \WP_Error( 'sigil_invalid_code', __( 'Verification failed.', 'sigil-2fa' ) );
+			return self::retryable( 'sigil_invalid_code', __( 'Verification failed.', 'sigil-2fa' ), self::reissue( $payload ) );
 		}
 
-		delete_transient( self::transient_key( $token ) );
 		Rate_Limit::clear( $user_key );
 		Rate_Limit::clear( $ip_key );
 
 		return true;
+	}
+
+	/**
+	 * A failure the user can act on, carrying the token to try again with.
+	 *
+	 * Empty when the session could not be reissued, which the caller shows as an
+	 * expired session rather than a retry.
+	 *
+	 * @param string $next Token for the next attempt.
+	 */
+	private static function retryable( string $code, string $message, string $next ): \WP_Error {
+		return new \WP_Error( $code, $message, array( 'token' => $next ) );
+	}
+
+	/**
+	 * Mint a replacement for a token a guess just consumed, carrying the choices
+	 * made at the password step.
+	 *
+	 * @param array{user_id: int, remember: bool, created: int, redirect_to: string} $payload
+	 */
+	private static function reissue( array $payload ): string {
+		$user = get_userdata( $payload['user_id'] );
+		if ( ! $user instanceof \WP_User ) {
+			return '';
+		}
+
+		return self::start( $user, $payload['remember'], $payload['redirect_to'] );
+	}
+
+	/**
+	 * The token a caller should retry with after a failed attempt, or the one it
+	 * already had when the error carries none.
+	 *
+	 * @param \WP_Error $error
+	 */
+	public static function next_token( $error, string $current ): string {
+		if ( ! $error instanceof \WP_Error ) {
+			return $current;
+		}
+
+		$data = $error->get_error_data();
+
+		return is_array( $data ) && isset( $data['token'] ) && is_string( $data['token'] ) ? $data['token'] : $current;
 	}
 
 	/**
@@ -194,7 +252,9 @@ final class Challenge {
 			$result         = self::complete( $token, $provider_id, $input );
 
 			if ( is_wp_error( $result ) ) {
-				$this->render_screen( $token, $user, $result, $provider_id );
+				// The attempt consumed the token, so re-render against its
+				// replacement or the form would post a dead one.
+				$this->render_screen( self::next_token( $result, $token ), $user, $result, $provider_id );
 				exit;
 			}
 

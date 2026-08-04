@@ -4,6 +4,37 @@ import { resetTwoFactor, login, logout, totp } from './helpers';
 // Each run starts from a clean slate.
 test.beforeEach(() => resetTwoFactor());
 
+// Each guess consumes the challenge token, so a mistyped code must hand the form
+// a fresh one. Getting this wrong turns a typo into "log in again".
+test('a wrong code can be corrected without starting over', async ({ page }) => {
+	await login(page);
+	await page.goto('/wp-admin/users.php?page=sigil-2fa-setup&method=totp');
+	const secret = await page.locator('input[name="sigil_totp_secret"]').inputValue();
+	await page.fill('input[name="sigil_totp_code"]', totp(secret));
+	await page.locator('button[type="submit"], input[type="submit"]').filter({ hasText: /enrol|enable|verify|confirm|save/i }).first().click();
+
+	await logout(page);
+	await login(page);
+
+	const firstToken = await page.locator('#sigil-challenge-form input[name="sigil_token"]').inputValue();
+
+	await page.fill('#sigil-challenge-form input[name="code"]', '000000');
+	await page.locator('#sigil-authenticate').click();
+	await expect(page.locator('body')).toContainText(/verification failed/i);
+
+	// The form must now be carrying a different, live token.
+	const retryToken = await page.locator('#sigil-challenge-form input[name="sigil_token"]').inputValue();
+	expect(retryToken).not.toBe(firstToken);
+	expect(retryToken).toMatch(/^[a-f0-9]{64}$/);
+
+	await page.fill('#sigil-challenge-form input[name="code"]', totp(secret));
+	await page.locator('#sigil-authenticate').click();
+	await page.waitForLoadState('networkidle');
+
+	await page.goto('/wp-admin/');
+	await expect(page.locator('#wpadminbar')).toBeVisible();
+});
+
 // The real go/no-go: a human enrols TOTP, logs out, is challenged, and gets back in.
 test('enrol TOTP, get challenged at login, and pass it', async ({ page }) => {
 	await login(page);

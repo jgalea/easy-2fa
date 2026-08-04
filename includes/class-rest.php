@@ -364,7 +364,18 @@ final class REST {
 		$result = Challenge::complete( $token, (string) $request['provider'], $input );
 		if ( is_wp_error( $result ) ) {
 			$status = 'sigil_rate_limited' === $result->get_error_code() ? 429 : 401;
-			return $this->as_rest_error( $result, $status );
+			$next   = Challenge::next_token( $result, '' );
+
+			// One guess per token, so a client that wants another attempt needs
+			// the replacement rather than the token it just spent.
+			return new \WP_Error(
+				$result->get_error_code(),
+				$result->get_error_message(),
+				array(
+					'status' => $status,
+					'token'  => '' !== $next ? $next : null,
+				)
+			);
 		}
 
 		$remember = $context ? $context['remember'] : false;

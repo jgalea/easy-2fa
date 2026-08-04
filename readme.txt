@@ -96,6 +96,7 @@ Yes. Settings → Sigil lets you pick exactly which roles are required, and set 
 == Changelog ==
 
 = 0.2.0 =
+* Security: a verification attempt now consumes its challenge token before the code is checked, so a burst of parallel guesses cannot outrun the attempt counter, and two simultaneous completions cannot both start a session. Mistyping a code still lets you try again; the screen carries a fresh token.
 * Multisite support. One set of credentials and one policy for the whole network, edited under Network Admin, with rate limiting that counts across sites. Upgrading an existing install carries its policy and passkeys up to network scope.
 * Front-end enrolment with the `[sigil_2fa]` shortcode, for sites whose users have no dashboard access. Enforcement sends people there when the page exists.
 * A REST API under `sigil/v1` for reading 2FA state, managing methods, editing the policy, and completing a login challenge from a decoupled front end.
