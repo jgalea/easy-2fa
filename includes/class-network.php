@@ -91,7 +91,20 @@ final class Network {
 	 * it for everyone.
 	 */
 	public static function manage_capability(): string {
-		return self::is_network() ? 'manage_network_options' : 'manage_options';
+		$capability = self::is_network() ? 'manage_network_options' : 'manage_options';
+
+		/**
+		 * Filter the capability required to manage the plugin's settings.
+		 *
+		 * Narrowing this is the point; widening it hands the policy to more
+		 * people than WordPress trusts with the site, so an empty or non-string
+		 * value is ignored.
+		 *
+		 * @param string $capability Default for this install type.
+		 */
+		$filtered = apply_filters( 'sigil_manage_capability', $capability );
+
+		return is_string( $filtered ) && '' !== $filtered ? $filtered : $capability;
 	}
 
 	/**

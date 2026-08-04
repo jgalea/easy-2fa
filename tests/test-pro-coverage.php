@@ -1,0 +1,173 @@
+<?php
+
+declare( strict_types=1 );
+
+/**
+ * Zero-setup coverage, the excused sign-in, and the branding that reaches the
+ * challenge screen.
+ */
+class Test_Pro_Coverage extends WP_UnitTestCase {
+
+	public function set_up(): void {
+		parent::set_up();
+
+		if ( ! defined( 'SIGIL_PRO' ) || ! SIGIL_PRO ) {
+			$this->markTestSkipped( 'pro add-on not installed' );
+		}
+
+		foreach ( array( 'class-zero-setup', 'class-always-email', 'class-bypass', 'class-branding' ) as $file ) {
+			require_once SIGIL_DIR . 'pro/' . $file . '.php';
+		}
+
+		\Sigil\Schema::install();
+	}
+
+	public function tear_down(): void {
+		delete_option( \Easy2FA\Pro\Zero_Setup::OPTION );
+		delete_option( \Easy2FA\Pro\Branding::OPTION );
+		\Sigil\Network::delete_option( \Sigil\Policy::OPTION_KEY );
+		// Deliberately not remove_all_filters(): these are added by singletons that
+		// will never re-add them, so stripping one here breaks whatever test runs
+		// next. Every one of them no-ops once its option is gone, which is the
+		// cleanup that actually matters.
+		parent::tear_down();
+	}
+
+	private function require_2fa(): void {
+		\Sigil\Policy::update(
+			array(
+				'enabled'    => true,
+				'roles'      => array( 'subscriber' => true, 'administrator' => true ),
+				'grace_days' => 0,
+			)
+		);
+	}
+
+	// The wall a policy meets is users who never set anything up. Their own
+	// address is a factor they do not have to configure.
+	public function test_an_account_that_set_nothing_up_is_still_covered(): void {
+		$user = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+		$this->require_2fa();
+
+		$this->assertFalse( \Sigil\Providers::instance()->has_usable( $user ), 'nothing is set up' );
+
+		\Easy2FA\Pro\Zero_Setup::set_enabled( true );
+		\Easy2FA\Pro\Zero_Setup::instance()->register();
+
+		$this->assertTrue( \Sigil\Providers::instance()->has_usable( $user ) );
+		$this->assertFalse( \Sigil\Policy::must_enrol_now( $user ), 'and is therefore not pushed at a wall' );
+	}
+
+	// It is a floor, not a preference. Anyone who enrols something stronger is
+	// challenged with that instead.
+	public function test_a_stronger_method_still_wins(): void {
+		$user = self::factory()->user->create();
+		\Sigil\Store::set_method( $user, 'totp', array( 'secret' => 'x' ) );
+
+		\Easy2FA\Pro\Zero_Setup::set_enabled( true );
+		\Easy2FA\Pro\Zero_Setup::instance()->register();
+
+		$preferred = \Sigil\Providers::instance()->preferred_for( $user );
+		$this->assertInstanceOf( \Sigil\Provider::class, $preferred );
+		$this->assertSame( 'totp', $preferred->id() );
+	}
+
+	// An address that cannot receive mail is not a factor, and pretending
+	// otherwise locks the account into a login it can never finish.
+	public function test_an_account_with_no_address_is_not_covered(): void {
+		$user = self::factory()->user->create();
+		wp_update_user( array( 'ID' => $user, 'user_email' => '' ) );
+
+		\Easy2FA\Pro\Zero_Setup::set_enabled( true );
+		\Easy2FA\Pro\Zero_Setup::instance()->register();
+
+		$this->assertFalse( \Sigil\Providers::instance()->has_usable( $user ) );
+	}
+
+	public function test_zero_setup_does_nothing_while_it_is_off(): void {
+		$user = self::factory()->user->create();
+		\Easy2FA\Pro\Zero_Setup::instance()->register();
+
+		$this->assertFalse( \Sigil\Providers::instance()->has_usable( $user ) );
+	}
+
+	private function manager(): int {
+		$id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		if ( is_multisite() ) {
+			grant_super_admin( $id );
+		}
+		return $id;
+	}
+
+	public function test_an_excused_sign_in_is_spent_once(): void {
+		$actor = $this->manager();
+		$user  = self::factory()->user->create_and_get();
+
+		$this->assertTrue( \Easy2FA\Pro\Bypass::grant_for( (int) $user->ID, $actor ) );
+		\Easy2FA\Pro\Bypass::instance()->register();
+
+		$this->assertTrue( (bool) apply_filters( 'sigil_skip_challenge', false, $user ), 'the excused sign-in goes through' );
+		$this->assertFalse( (bool) apply_filters( 'sigil_skip_challenge', false, $user ), 'and the next one does not' );
+	}
+
+	// An administrator who can excuse their own sign-in has no second factor,
+	// only a slower one.
+	public function test_nobody_can_excuse_their_own_sign_in(): void {
+		$actor = $this->manager();
+
+		$this->assertFalse( \Easy2FA\Pro\Bypass::can_grant( $actor, $actor ) );
+		$this->assertFalse( \Easy2FA\Pro\Bypass::grant_for( $actor, $actor ) );
+	}
+
+	public function test_someone_without_the_capability_cannot_excuse_anyone(): void {
+		$editor = self::factory()->user->create( array( 'role' => 'editor' ) );
+		$user   = self::factory()->user->create();
+
+		$this->assertFalse( \Easy2FA\Pro\Bypass::grant_for( $user, $editor ) );
+		$this->assertFalse( \Easy2FA\Pro\Bypass::has_grant( $user ) );
+	}
+
+	public function test_an_excused_sign_in_expires_on_its_own(): void {
+		$actor = $this->manager();
+		$user  = self::factory()->user->create_and_get();
+
+		\Easy2FA\Pro\Bypass::grant_for( (int) $user->ID, $actor );
+		update_user_meta( (int) $user->ID, '_easy2fa_bypass', array( 'expires' => time() - 1, 'actor' => $actor ) );
+
+		$this->assertFalse( \Easy2FA\Pro\Bypass::has_grant( (int) $user->ID ) );
+	}
+
+	public function test_excusing_a_sign_in_is_written_to_the_audit_log(): void {
+		$actor = $this->manager();
+		$user  = self::factory()->user->create();
+
+		\Easy2FA\Pro\Bypass::grant_for( $user, $actor );
+
+		$log = get_user_meta( $user, '_sigil_reset_log', true );
+		$this->assertIsArray( $log );
+		$this->assertSame( 'bypass', $log[0]['action'] );
+		$this->assertSame( $actor, (int) $log[0]['actor'] );
+	}
+
+	public function test_the_challenge_screen_takes_the_site_wording(): void {
+		\Easy2FA\Pro\Branding::update( array( 'title' => 'Confirm it is you', 'intro' => 'Signing in as %s, nearly there.' ) );
+		\Easy2FA\Pro\Branding::instance()->register();
+
+		$text = apply_filters(
+			'sigil_challenge_text',
+			array( 'title' => 'Two-factor authentication', 'intro' => 'Signing in as %s.', 'verify' => 'Verify' )
+		);
+
+		$this->assertSame( 'Confirm it is you', $text['title'] );
+		$this->assertSame( 'Signing in as %s, nearly there.', $text['intro'] );
+		$this->assertSame( 'Verify', $text['verify'], 'anything left unset keeps the default' );
+	}
+
+	public function test_a_closing_style_tag_cannot_escape_the_stylesheet(): void {
+		\Easy2FA\Pro\Branding::update( array( 'css' => 'body{color:red}</style><script>alert(1)</script>' ) );
+
+		$stored = \Easy2FA\Pro\Branding::get()['css'];
+		$this->assertStringNotContainsString( '</style>', $stored );
+		$this->assertStringNotContainsString( '<script', $stored );
+	}
+}

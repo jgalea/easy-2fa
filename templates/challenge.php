@@ -22,6 +22,33 @@ defined( 'ABSPATH' ) || exit;
 
 $action_url = site_url( 'wp-login.php?action=sigil', 'login_post' );
 
+/**
+ * Filter the wording on the challenge screen.
+ *
+ * This is the most visible surface the plugin owns, and a site with a house
+ * voice will want its own words on it. Values are escaped after filtering, so a
+ * replacement cannot introduce markup.
+ *
+ * @param array<string, string> $text Keyed by slug.
+ */
+$sigil_text = (array) apply_filters(
+	'sigil_challenge_text',
+	array(
+		'title'   => __( 'Two-factor authentication', 'sigil-2fa' ),
+		/* translators: %s: username */
+		'intro'   => __( 'Signing in as %s.', 'sigil-2fa' ),
+		'verify'  => __( 'Verify', 'sigil-2fa' ),
+		'methods' => __( 'Verify another way:', 'sigil-2fa' ),
+		'cancel'  => __( 'Cancel and go back to login', 'sigil-2fa' ),
+	)
+);
+
+$sigil_say = static function ( string $key, string $fallback ) use ( $sigil_text ): string {
+	return isset( $sigil_text[ $key ] ) && is_string( $sigil_text[ $key ] ) && '' !== $sigil_text[ $key ]
+		? $sigil_text[ $key ]
+		: $fallback;
+};
+
 // Passkey drives the browser prompt and submits this form itself once the
 // assertion is in hand, so a generic Verify button would sit there as a second,
 // dead primary button.
@@ -35,13 +62,13 @@ foreach ( $challenge_providers as $provider ) {
 }
 ?>
 <div class="sigil-challenge">
-	<h1 class="sigil-challenge__title"><?php echo esc_html__( 'Two-factor authentication', 'sigil-2fa' ); ?></h1>
+	<h1 class="sigil-challenge__title"><?php echo esc_html( $sigil_say( 'title', __( 'Two-factor authentication', 'sigil-2fa' ) ) ); ?></h1>
 	<p class="sigil-challenge__intro">
 		<?php
 		echo esc_html(
 			sprintf(
 				/* translators: %s: username */
-				__( 'Signing in as %s.', 'sigil-2fa' ),
+				$sigil_say( 'intro', __( 'Signing in as %s.', 'sigil-2fa' ) ),
 				$challenge_user->user_login
 			)
 		);
@@ -74,7 +101,7 @@ foreach ( $challenge_providers as $provider ) {
 		<?php else : ?>
 			<p class="sigil-challenge__submit">
 				<button type="submit" name="sigil_authenticate" id="sigil-authenticate" class="button button-primary button-large" value="1">
-					<?php echo esc_html__( 'Verify', 'sigil-2fa' ); ?>
+					<?php echo esc_html( $sigil_say( 'verify', __( 'Verify', 'sigil-2fa' ) ) ); ?>
 				</button>
 			</p>
 		<?php endif; ?>
@@ -85,7 +112,7 @@ foreach ( $challenge_providers as $provider ) {
 			<input type="hidden" name="sigil_token" value="<?php echo esc_attr( $challenge_token ); ?>" />
 			<input type="hidden" name="sigil_remember" value="<?php echo $challenge_remember ? '1' : ''; ?>" />
 			<input type="hidden" name="sigil_redirect_to" value="<?php echo esc_attr( $challenge_redirect ); ?>" />
-			<p class="sigil-challenge__methods-label"><?php echo esc_html__( 'Verify another way:', 'sigil-2fa' ); ?></p>
+			<p class="sigil-challenge__methods-label"><?php echo esc_html( $sigil_say( 'methods', __( 'Verify another way:', 'sigil-2fa' ) ) ); ?></p>
 			<?php foreach ( $alternatives as $provider ) : ?>
 				<button type="submit" class="sigil-challenge__method" name="sigil_provider" value="<?php echo esc_attr( $provider->id() ); ?>">
 					<?php echo esc_html( $provider->label() ); ?>
@@ -95,6 +122,6 @@ foreach ( $challenge_providers as $provider ) {
 	<?php endif; ?>
 
 	<p class="sigil-challenge__cancel">
-		<a href="<?php echo esc_url( wp_login_url() ); ?>"><?php echo esc_html__( 'Cancel and go back to login', 'sigil-2fa' ); ?></a>
+		<a href="<?php echo esc_url( wp_login_url() ); ?>"><?php echo esc_html( $sigil_say( 'cancel', __( 'Cancel and go back to login', 'sigil-2fa' ) ) ); ?></a>
 	</p>
 </div>

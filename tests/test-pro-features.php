@@ -29,7 +29,10 @@ class Test_Pro_Features extends WP_UnitTestCase {
 		delete_option( \Easy2FA\Pro\Destinations::OPTION );
 		delete_option( \Easy2FA\Pro\Method_Policy::OPTION );
 		delete_option( \Easy2FA\Pro\Branding::OPTION );
-		remove_all_filters( 'sigil_providers' );
+		// Deliberately not remove_all_filters(): these are added by singletons that
+		// will never re-add them, so stripping one here breaks whatever test runs
+		// next. Every one of them no-ops once its option is gone, which is the
+		// cleanup that actually matters.
 		parent::tear_down();
 	}
 
@@ -68,7 +71,7 @@ class Test_Pro_Features extends WP_UnitTestCase {
 		);
 
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'subscriber' ) ) );
-		\Easy2FA\Pro\Method_Policy::instance();
+		\Easy2FA\Pro\Method_Policy::instance()->register();
 
 		$ids = array_map(
 			static function ( \Sigil\Provider $provider ): string {
@@ -88,7 +91,7 @@ class Test_Pro_Features extends WP_UnitTestCase {
 		);
 
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'subscriber' ) ) );
-		\Easy2FA\Pro\Method_Policy::instance();
+		\Easy2FA\Pro\Method_Policy::instance()->register();
 
 		$this->assertNotEmpty( \Sigil\Providers::instance()->all() );
 	}
@@ -102,7 +105,7 @@ class Test_Pro_Features extends WP_UnitTestCase {
 				'from_name' => 'Example Security',
 			)
 		);
-		\Easy2FA\Pro\Branding::instance();
+		\Easy2FA\Pro\Branding::instance()->register();
 
 		$user = self::factory()->user->create_and_get( array( 'display_name' => 'Ada' ) );
 
@@ -118,7 +121,7 @@ class Test_Pro_Features extends WP_UnitTestCase {
 	// A template that lost its placeholder would mail a code-less code email.
 	public function test_a_template_without_the_code_falls_back(): void {
 		\Easy2FA\Pro\Branding::update( array( 'body' => 'Hello, please sign in.' ) );
-		\Easy2FA\Pro\Branding::instance();
+		\Easy2FA\Pro\Branding::instance()->register();
 
 		$user = self::factory()->user->create_and_get();
 
@@ -272,7 +275,7 @@ class Test_Pro_Features extends WP_UnitTestCase {
 
 	public function test_setup_sends_the_user_on_once_they_hold_a_factor(): void {
 		\Easy2FA\Pro\Destinations::update( home_url( '/members/' ) );
-		\Easy2FA\Pro\Destinations::instance();
+		\Easy2FA\Pro\Destinations::instance()->register();
 
 		$this->assertSame(
 			home_url( '/members/' ),
@@ -283,7 +286,7 @@ class Test_Pro_Features extends WP_UnitTestCase {
 	// Part-way through, the setup screen is still where they need to be.
 	public function test_setup_does_not_redirect_before_anything_is_enrolled(): void {
 		\Easy2FA\Pro\Destinations::update( home_url( '/members/' ) );
-		\Easy2FA\Pro\Destinations::instance();
+		\Easy2FA\Pro\Destinations::instance()->register();
 
 		$bare = self::factory()->user->create();
 
@@ -297,7 +300,7 @@ class Test_Pro_Features extends WP_UnitTestCase {
 	// place nobody should be sent away from.
 	public function test_setup_never_redirects_off_the_backup_code_display(): void {
 		\Easy2FA\Pro\Destinations::update( home_url( '/members/' ) );
-		\Easy2FA\Pro\Destinations::instance();
+		\Easy2FA\Pro\Destinations::instance()->register();
 
 		$this->assertSame(
 			'https://example.org/back',
@@ -307,7 +310,7 @@ class Test_Pro_Features extends WP_UnitTestCase {
 
 	public function test_setup_leaves_removals_and_failures_alone(): void {
 		\Easy2FA\Pro\Destinations::update( home_url( '/members/' ) );
-		\Easy2FA\Pro\Destinations::instance();
+		\Easy2FA\Pro\Destinations::instance()->register();
 		$user = $this->enrolled_user();
 
 		$this->assertSame( 'https://example.org/back', apply_filters( 'sigil_enrol_redirect', 'https://example.org/back', $user, 'success', 'removed', 'totp' ) );
