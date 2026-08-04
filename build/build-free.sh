@@ -18,34 +18,14 @@ fi
 rm -rf "$DIST/sigil-2fa" "$DIST/sigil-2fa.zip"
 mkdir -p "$DIST/sigil-2fa"
 
+# One source of truth for what ships: .distignore, which the wordpress.org
+# deploy action also reads. Duplicating the list here is how assets/js/vendor and
+# a tool cache each nearly reached a package.
+#
+# vendor/ and languages/ are excluded on top of it and rebuilt below, because
+# both hold more locally than belongs in a release.
 rsync -a \
-    --exclude='/pro/' \
-    --exclude='/build/' \
-    --exclude='/dist/' \
-    --exclude='/docs/' \
-    --exclude='/e2e/' \
-    --exclude='/tests/' \
-    --exclude='/node_modules/' \
-    --exclude='/test-results/' \
-    --exclude='/playwright-report/' \
-    --exclude='/.git/' \
-    --exclude='.gitignore' \
-    --exclude='/.github/' \
-    --exclude='/.wordpress-org/' \
-    --exclude='.distignore' \
-    --exclude='/.claude/' \
-    --exclude='.wp-env.json' \
-    --exclude='phpunit.xml.dist' \
-    --exclude='playwright.config.ts' \
-    --exclude='package.json' \
-    --exclude='package-lock.json' \
-    --exclude='composer.json' \
-    --exclude='composer.lock' \
-    --exclude='*.log' \
-    --exclude='*.md' \
-    --exclude='.DS_Store' \
-    --exclude='.phpunit.result.cache' \
-    --exclude='.secret-scan-allow' \
+    --exclude-from="$ROOT/.distignore" \
     --exclude='/vendor/' \
     --exclude='/languages/' \
     "$ROOT/" "$DIST/sigil-2fa/"
@@ -117,7 +97,9 @@ for file in "${REQUIRED[@]}"; do
 done
 
 # Nothing from the development tree should reach the package.
-for unwanted in tests e2e pro node_modules .git .github build dist; do
+for unwanted in tests e2e pro node_modules .git .github .claude .impeccable build dist \
+                package.json composer.json phpunit.xml.dist phpunit-multisite.xml.dist \
+                .phpunit.result.cache playwright.config.ts .distignore; do
   if [ -e "$DIST/sigil-2fa/$unwanted" ]; then
     echo "Development path leaked into the package: $unwanted" >&2
     exit 1

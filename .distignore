@@ -12,9 +12,12 @@
 /.github
 /.wordpress-org
 /.claude
+/.impeccable
 .gitignore
 .distignore
 .secret-scan-allow
+.phpunit.result.cache
+.phpunit.cache
 .DS_Store
 .wp-env.json
 phpunit.xml.dist
