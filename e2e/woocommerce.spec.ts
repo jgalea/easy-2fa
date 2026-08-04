@@ -28,6 +28,17 @@ test.beforeAll(() => {
 		// passed locally only because the page already existed.
 		cli(['wc', 'tool', 'run', 'install_pages', '--user=1']);
 
+		// A freshly activated WooCommerce hijacks the next admin page load for
+		// its onboarding, so the first login lands on a setup screen instead of
+		// the dashboard. Locally that was dismissed long ago; on a fresh CI
+		// install it swallows the login.
+		try {
+			cli(['transient', 'delete', '_wc_activation_redirect']);
+		} catch {
+			// already gone
+		}
+		cli(['option', 'update', 'woocommerce_onboarding_profile', '{"completed":true,"skipped":true}', '--format=json']);
+
 		// The tab lives behind the licence, like every other paid feature.
 		cli(['option', 'update', 'easy2fa_license',
 			'{"key":"DEV-TEST-KEY","status":"active","expires_at":0,"checked_at":0}', '--format=json']);
