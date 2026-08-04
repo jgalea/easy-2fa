@@ -46,14 +46,29 @@ export async function login(page: Page, user = 'admin', pass = 'password') {
 	await username.waitFor({ state: 'visible' });
 	await password.waitFor({ state: 'visible' });
 
-	await username.fill(user);
-	await password.fill(pass);
+	// wp-login.php focuses the username field from an inline script. If that
+	// runs between filling the first field and the second, the second value
+	// lands in the username box instead: the form ends up with the password as
+	// the username and no password at all. Waiting for the focus to arrive means
+	// the steal has already happened before anything is typed.
+	await page
+		.waitForFunction(() => document.activeElement?.id === 'user_login', undefined, { timeout: 5_000 })
+		.catch(() => {
+			// Some themes and versions never focus it. Nothing to wait for then.
+		});
 
-	// Check the form holds what we typed before submitting it. On a slow render
-	// the second fill has landed in the first field, leaving the username set to
-	// "password" and the password empty, and submitting that produces a 90s wait
-	// for a screen that was never going to appear. Asserting here turns it into
-	// an immediate, obvious failure.
+	// Fill, then check the form actually holds it. A retry costs a second and
+	// covers whatever else on the page might move focus; a wrong form otherwise
+	// submits and waits for a screen that was never going to appear.
+	for (let attempt = 0; attempt < 2; attempt++) {
+		await username.fill(user);
+		await password.fill(pass);
+
+		if ((await username.inputValue()) === user && (await password.inputValue()) === pass) {
+			break;
+		}
+	}
+
 	await expect(username).toHaveValue(user);
 	await expect(password).toHaveValue(pass);
 
