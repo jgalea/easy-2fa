@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, Page } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 import { resetTwoFactor, login, logout, totp } from './helpers';
 
@@ -58,6 +58,39 @@ test('a user can enrol from a front-end page without touching wp-admin', async (
 	await page.waitForLoadState('networkidle');
 	await page.goto('/wp-admin/');
 	await expect(page.locator('#wpadminbar')).toBeVisible();
+});
+
+// The passkey panel enqueues its script while the shortcode is rendering, which
+// is after wp_enqueue_scripts has run. That only works because the handle is
+// registered for the footer, so it is worth holding down.
+test('passkey enrolment works from the front-end page', async ({ page }) => {
+	const client = await page.context().newCDPSession(page);
+	await client.send('WebAuthn.enable');
+	await client.send('WebAuthn.addVirtualAuthenticator', {
+		options: {
+			protocol: 'ctap2',
+			transport: 'internal',
+			hasResidentKey: true,
+			hasUserVerification: true,
+			isUserVerified: true,
+			automaticPresenceSimulation: true,
+		},
+	});
+
+	const errors: string[] = [];
+	page.on('pageerror', (e) => errors.push(String(e)));
+
+	await login(page);
+	await page.goto('/two-factor/');
+	await page.locator('.sigil-enrol__tab', { hasText: /passkey/i }).first().click();
+
+	// Its config has to reach the page, or the button is inert.
+	expect(await page.evaluate(() => typeof (window as any).sigilPasskey)).toBe('object');
+
+	await page.fill('#sigil-passkey-label', 'Front key');
+	await page.locator('.sigil-passkey-register').click();
+	await expect(page.locator('.sigil-passkey-status')).toContainText(/registered/i);
+	expect(errors).toEqual([]);
 });
 
 test('the front-end page is styled rather than raw markup', async ({ page }) => {
