@@ -1,6 +1,11 @@
 {
   "core": "https://wordpress.org/latest.zip",
-  "plugins": [ "." ],
+  "plugins": [
+    "."
+  ],
   "port": 8877,
-  "testsPort": 8876
+  "testsPort": 8876,
+  "mappings": {
+    "wp-content/mu-plugins/e2e-no-mail.php": "./e2e/mu-no-mail.php"
+  }
 }

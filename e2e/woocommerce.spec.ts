@@ -13,6 +13,7 @@ function cli(args: string[]): string {
 }
 
 let available = true;
+let provisioningError = '';
 
 test.beforeAll(() => {
 	if (!proInstalled) {
@@ -21,7 +22,14 @@ test.beforeAll(() => {
 	}
 
 	try {
-		cli(['plugin', 'install', 'woocommerce', '--activate']);
+		// Retried once: a fresh environment occasionally loses the first attempt,
+		// and a silent skip here would report a green run with the feature
+		// untested.
+		try {
+			cli(['plugin', 'install', 'woocommerce', '--activate']);
+		} catch {
+			cli(['plugin', 'install', 'woocommerce', '--activate']);
+		}
 
 		// A fresh install has no My Account page, so the endpoint has nothing to
 		// hang off and every assertion here would be about a 404 instead. This
@@ -48,8 +56,9 @@ test.beforeAll(() => {
 		if (!/^\d+$/.test(accountPage) || accountPage === '0') {
 			available = false;
 		}
-	} catch {
+	} catch (error) {
 		available = false;
+		provisioningError = String(error);
 	}
 });
 
@@ -68,7 +77,12 @@ test.beforeEach(() => resetTwoFactor());
 // the endpoint claimed the site root and a page shadowed it.
 test('the account area gets a two-factor tab that actually resolves', async ({ page }) => {
 	test.skip(!proInstalled, 'the paid add-on is not present in this checkout');
-	test.skip(!available, 'WooCommerce could not be installed');
+
+	// The add-on is here, so this feature exists and must be exercised. A broken
+	// environment is a failure to look at, not a skip to overlook.
+	if (!available) {
+		throw new Error(`WooCommerce could not be provisioned, so the tab went untested: ${provisioningError}`);
+	}
 
 	await login(page);
 	await page.goto('/my-account/');
@@ -89,7 +103,12 @@ test('the account area gets a two-factor tab that actually resolves', async ({ p
 
 test('a customer can enrol from the account tab', async ({ page }) => {
 	test.skip(!proInstalled, 'the paid add-on is not present in this checkout');
-	test.skip(!available, 'WooCommerce could not be installed');
+
+	// The add-on is here, so this feature exists and must be exercised. A broken
+	// environment is a failure to look at, not a skip to overlook.
+	if (!available) {
+		throw new Error(`WooCommerce could not be provisioned, so the tab went untested: ${provisioningError}`);
+	}
 
 	await login(page);
 	await page.goto('/my-account/two-factor/');
