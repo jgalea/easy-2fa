@@ -342,7 +342,7 @@ final class Challenge {
 
 		// login_header/footer exist when the request entered via wp-login.php.
 		// on_login often runs before those helpers have printed, but they are defined.
-		// Never require wp-login.php here — it would re-enter the login controller.
+		// Never require wp-login.php here: it would re-enter the login controller.
 		if ( function_exists( 'login_header' ) ) {
 			login_header(
 				$login_title,

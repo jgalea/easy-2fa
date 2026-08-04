@@ -1,0 +1,187 @@
+/*
+ * The enrolment UI outside wp-admin. The markup is shared with the admin screen,
+ * so the admin classes it carries (button, notice, description) need standalone
+ * definitions here. Everything is scoped and inherits the theme's font and
+ * colours rather than imposing an admin look on the page.
+ */
+
+.sigil-enrol--frontend {
+	max-width: 40rem;
+	margin: 0 auto;
+	font-size: 1rem;
+	line-height: 1.6;
+}
+
+.sigil-enrol--frontend h2,
+.sigil-enrol--frontend h3 {
+	margin: 0 0 0.75rem;
+	line-height: 1.3;
+}
+
+.sigil-enrol--frontend p {
+	margin: 0 0 1rem;
+}
+
+.sigil-enrol--frontend .description {
+	font-size: 0.875rem;
+	opacity: 0.75;
+}
+
+.sigil-enrol--frontend .notice {
+	margin: 0 0 1.25rem;
+	padding: 0.75rem 1rem;
+	border: 1px solid currentColor;
+	border-left-width: 4px;
+	border-radius: 3px;
+	background: rgba(127, 127, 127, 0.06);
+}
+
+.sigil-enrol--frontend .notice p {
+	margin: 0;
+}
+
+.sigil-enrol--frontend .notice-success {
+	border-color: #2f7d32;
+}
+
+.sigil-enrol--frontend .notice-error {
+	border-color: #b3261e;
+}
+
+.sigil-enrol--frontend .notice-warning {
+	border-color: #a26900;
+}
+
+.sigil-enrol--frontend .sigil-enrol__status {
+	margin: 0 0 1.25rem;
+}
+
+.sigil-enrol--frontend .sigil-enrol__tabs ul {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	margin: 0 0 1.25rem;
+	padding: 0;
+	list-style: none;
+}
+
+.sigil-enrol--frontend .sigil-enrol__tab {
+	display: inline-block;
+	padding: 0.4rem 0.8rem;
+	border: 1px solid currentColor;
+	border-radius: 999px;
+	font-size: 0.875rem;
+	text-decoration: none;
+	opacity: 0.7;
+}
+
+.sigil-enrol--frontend .sigil-enrol__tab.is-active {
+	opacity: 1;
+	font-weight: 600;
+}
+
+.sigil-enrol--frontend .sigil-enrol__badge {
+	margin-left: 0.4rem;
+	font-size: 0.75rem;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.sigil-enrol--frontend .sigil-enrol__panel {
+	padding: 1.25rem;
+	border: 1px solid rgba(127, 127, 127, 0.35);
+	border-radius: 4px;
+}
+
+.sigil-enrol--frontend label {
+	display: block;
+	margin-bottom: 0.25rem;
+	font-weight: 600;
+}
+
+.sigil-enrol--frontend input[type="text"],
+.sigil-enrol--frontend input[type="tel"] {
+	width: 100%;
+	max-width: 22rem;
+	padding: 0.5rem 0.65rem;
+	font-size: 1rem;
+	line-height: 1.4;
+	border: 1px solid rgba(127, 127, 127, 0.6);
+	border-radius: 3px;
+}
+
+.sigil-enrol--frontend .button {
+	display: inline-block;
+	padding: 0.5rem 1.1rem;
+	border: 1px solid currentColor;
+	border-radius: 3px;
+	background: none;
+	color: inherit;
+	font: inherit;
+	line-height: 1.4;
+	cursor: pointer;
+	text-decoration: none;
+}
+
+.sigil-enrol--frontend .button-primary {
+	border-color: transparent;
+	background: #2271b1;
+	color: #fff;
+}
+
+.sigil-enrol--frontend .button-primary:hover,
+.sigil-enrol--frontend .button-primary:focus {
+	background: #135e96;
+	color: #fff;
+}
+
+.sigil-enrol--frontend .button-link-delete {
+	border-color: transparent;
+	padding-left: 0;
+	padding-right: 0;
+	color: #b3261e;
+	text-decoration: underline;
+}
+
+.sigil-enrol--frontend .submit {
+	margin: 1.25rem 0 0;
+}
+
+.sigil-enrol--frontend .sigil-enrol__form--remove {
+	margin-top: 1rem;
+}
+
+/* One-time backup codes: readable, selectable, and obviously not prose. */
+.sigil-enrol--frontend .sigil-backup-codes-list {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
+	gap: 0.5rem;
+	margin: 0 0 1rem;
+	padding: 0;
+	list-style: none;
+}
+
+.sigil-enrol--frontend .sigil-backup-codes-list code {
+	display: block;
+	padding: 0.4rem 0.5rem;
+	border: 1px solid rgba(127, 127, 127, 0.35);
+	border-radius: 3px;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 0.95rem;
+	letter-spacing: 0.08em;
+	text-align: center;
+}
+
+.sigil-enrol--frontend img {
+	max-width: 100%;
+	height: auto;
+}
+
+.sigil-enrol--frontend .sigil-passkey-status:empty {
+	display: none;
+}
+
+.sigil-enrol--frontend .sigil-passkey-status {
+	margin-top: 0.75rem;
+	font-size: 0.875rem;
+}

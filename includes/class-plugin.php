@@ -58,6 +58,9 @@ final class Plugin {
 		require_once SIGIL_DIR . 'includes/class-rest.php';
 		REST::instance();
 
+		require_once SIGIL_DIR . 'includes/class-frontend.php';
+		Frontend::instance();
+
 		// Pro add-on, when present. The free build strips pro/ entirely, so this
 		// include only fires in the Pro distribution.
 		if ( SIGIL_PRO ) {

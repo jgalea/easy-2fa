@@ -40,7 +40,24 @@ final class Enforcement {
 			return '';
 		}
 
-		return admin_url( 'admin.php?page=' . self::SETUP_PAGE );
+		return self::setup_url();
+	}
+
+	/**
+	 * Where a user is sent to enrol. Filtered so a front-end page can stand in
+	 * for the admin screen when members have no dashboard access.
+	 */
+	public static function setup_url(): string {
+		$url = admin_url( 'users.php?page=' . self::SETUP_PAGE );
+
+		/**
+		 * Filter the enrolment URL users are pushed to.
+		 *
+		 * @param string $url Admin setup screen by default.
+		 */
+		$filtered = apply_filters( 'sigil_setup_url', $url );
+
+		return is_string( $filtered ) && '' !== $filtered ? $filtered : $url;
 	}
 
 	public function maybe_redirect(): void {
@@ -78,7 +95,7 @@ final class Enforcement {
 			$days_left = 1;
 		}
 
-		$setup_url = admin_url( 'admin.php?page=' . self::SETUP_PAGE );
+		$setup_url = self::setup_url();
 		$dismiss   = wp_nonce_url(
 			admin_url( 'admin-post.php?action=sigil_dismiss_grace_notice' ),
 			'sigil_dismiss_grace_notice'
@@ -172,6 +189,12 @@ final class Enforcement {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- routing check only.
 		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( (string) $_GET['page'] ) ) : '';
 		if ( self::SETUP_PAGE === $page ) {
+			return true;
+		}
+
+		// The front-end enrolment page is where we send people, so it can never
+		// be a redirect target for itself.
+		if ( is_singular() && (int) get_the_ID() === (int) Network::get_option( Frontend::PAGE_OPTION, 0 ) ) {
 			return true;
 		}
 

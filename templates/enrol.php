@@ -43,7 +43,7 @@ $post_url      = admin_url( 'admin-post.php' );
 			<?php
 			switch ( $notices['code'] ?? '' ) {
 				case 'enrolled_backup':
-					echo esc_html__( 'Method saved. Save your backup codes below — they will not be shown again.', 'sigil-2fa' );
+					echo esc_html__( 'Method saved. Save your backup codes below, they will not be shown again.', 'sigil-2fa' );
 					break;
 				case 'enrolled':
 					echo esc_html__( 'Authentication method saved.', 'sigil-2fa' );

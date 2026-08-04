@@ -275,6 +275,27 @@ final class Enrolment {
 		$this->redirect_with_status( $user_id, 'success', 'enrolled_backup', '', 'backup' );
 	}
 
+	/**
+	 * Where the submission came from, when that was a page outside wp-admin.
+	 * wp_nonce_field() already carries the referer on every one of these forms.
+	 * wp_safe_redirect() rejects off-site values, so a forged referer cannot
+	 * send anyone anywhere but this site.
+	 */
+	private function frontend_referer(): string {
+		$referer = wp_get_referer();
+		if ( ! is_string( $referer ) || '' === $referer ) {
+			return '';
+		}
+
+		if ( 0 === strpos( $referer, admin_url() ) || 0 === strpos( $referer, network_admin_url() ) ) {
+			return '';
+		}
+
+		$validated = wp_validate_redirect( $referer, '' );
+
+		return is_string( $validated ) ? $validated : '';
+	}
+
 	public function can_manage_methods( int $user_id ): bool {
 		if ( $user_id <= 0 ) {
 			return false;
@@ -356,7 +377,7 @@ final class Enrolment {
 		return $backup instanceof Providers\Backup_Codes && $backup->has_pending_display( $user_id );
 	}
 
-	private function render_enrol_ui( int $user_id, bool $is_setup_page ): void {
+	public function render_enrol_ui( int $user_id, bool $is_setup_page ): void {
 		$providers = Providers::instance()->all();
 		$methods   = Store::methods( $user_id );
 		$notices   = $this->consume_notices();
@@ -422,7 +443,10 @@ final class Enrolment {
 			$args['method'] = $provider_id;
 		}
 
-		if ( $current === $user_id ) {
+		$front = $this->frontend_referer();
+		if ( '' !== $front ) {
+			$url = add_query_arg( $args, $front );
+		} elseif ( $current === $user_id ) {
 			$url = add_query_arg(
 				array_merge(
 					array( 'page' => self::PAGE_SLUG ),

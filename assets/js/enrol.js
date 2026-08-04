@@ -28,12 +28,9 @@
 			}
 		}
 
-		// Fallback: show a copyable URI block so enrolment still works without a QR lib.
+		// Fallback when no QR renderer is present. The provisioning URI and the
+		// secret are already on the page above, so repeat neither.
 		container.innerHTML = '';
-		var pre = document.createElement('code');
-		pre.className = 'sigil-totp-qr-fallback';
-		pre.textContent = text;
-		container.appendChild(pre);
 
 		var hint = document.createElement('p');
 		hint.className = 'description';
