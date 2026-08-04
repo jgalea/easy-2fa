@@ -10,6 +10,9 @@ declare( strict_types=1 );
  */
 class Test_Pro_Features extends WP_UnitTestCase {
 
+	// RFC 6238 canonical example, the same one test-crypto.php and test-totp.php use.
+	private const SECRET = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ';
+
 	public function set_up(): void {
 		parent::set_up();
 
@@ -17,7 +20,7 @@ class Test_Pro_Features extends WP_UnitTestCase {
 			$this->markTestSkipped( 'pro add-on not installed' );
 		}
 
-		foreach ( array( 'class-trusted-devices', 'class-method-policy', 'class-branding', 'class-portability' ) as $file ) {
+		foreach ( array( 'class-trusted-devices', 'class-method-policy', 'class-branding', 'class-portability', 'class-password-reset' ) as $file ) {
 			require_once SIGIL_DIR . 'pro/' . $file . '.php';
 		}
 	}
@@ -163,6 +166,96 @@ class Test_Pro_Features extends WP_UnitTestCase {
 		$this->assertWPError( \Easy2FA\Pro\Portability::import( 'not json' ) );
 		$this->assertWPError( \Easy2FA\Pro\Portability::import( '{"plugin":"something-else","format":1}' ) );
 		$this->assertWPError( \Easy2FA\Pro\Portability::import( '{"plugin":"sigil-2fa","format":99}' ) );
+	}
+
+	/**
+	 * Whoever reads the inbox can request a reset link. Without a second factor
+	 * on that form, 2FA guards the front door and leaves the window open.
+	 *
+	 * @param array<string, string> $post
+	 */
+	private function reset_errors( int $user_id, array $post ): \WP_Error {
+		$_POST  = $post;
+		$errors = new \WP_Error();
+		\Easy2FA\Pro\Password_Reset::instance()->validate( $errors, get_user_by( 'id', $user_id ) );
+		$_POST  = array();
+
+		return $errors;
+	}
+
+	public function test_a_reset_without_a_code_is_refused(): void {
+		$user = self::factory()->user->create();
+		$totp = new \Sigil\Providers\Totp();
+		$totp->handle_enrol(
+			$user,
+			array( 'secret' => self::SECRET, 'code' => \Sigil\Providers\Totp::code_at( self::SECRET, time() - 30 ) )
+		);
+
+		$errors = $this->reset_errors( $user, array( 'pass1' => 'a-new-password' ) );
+		$this->assertContains( 'easy2fa_reset_code_missing', $errors->get_error_codes() );
+	}
+
+	public function test_a_wrong_code_is_refused(): void {
+		$user = self::factory()->user->create();
+		$totp = new \Sigil\Providers\Totp();
+		$totp->handle_enrol(
+			$user,
+			array( 'secret' => self::SECRET, 'code' => \Sigil\Providers\Totp::code_at( self::SECRET, time() - 30 ) )
+		);
+
+		$errors = $this->reset_errors( $user, array( 'pass1' => 'a-new-password', 'easy2fa_reset_code' => '000000' ) );
+		$this->assertContains( 'easy2fa_reset_code_invalid', $errors->get_error_codes() );
+
+		\Sigil\Rate_Limit::clear( 'reset:u:' . $user );
+	}
+
+	public function test_a_correct_code_lets_the_reset_through(): void {
+		$user = self::factory()->user->create();
+		$totp = new \Sigil\Providers\Totp();
+		$totp->handle_enrol( $user, array( 'secret' => self::SECRET, 'code' => \Sigil\Providers\Totp::code_at( self::SECRET, time() - 30 ) ) );
+
+		$errors = $this->reset_errors(
+			$user,
+			array( 'pass1' => 'a-new-password', 'easy2fa_reset_code' => \Sigil\Providers\Totp::code_at( self::SECRET, time() ) )
+		);
+
+		$this->assertSame( array(), $errors->get_error_codes() );
+	}
+
+	// A backup code has to work here, or a passkey-only account could never
+	// reset its password: there is nothing to present on that form.
+	public function test_a_backup_code_works_for_a_passkey_only_account(): void {
+		$user   = self::factory()->user->create();
+		$backup = \Sigil\Providers::instance()->get( 'backup' );
+		$codes  = $backup->generate( $user );
+
+		$errors = $this->reset_errors(
+			$user,
+			array( 'pass1' => 'a-new-password', 'easy2fa_reset_code' => $codes[0] )
+		);
+
+		$this->assertSame( array(), $errors->get_error_codes() );
+	}
+
+	// An account with no second factor must not be asked for one, or it could
+	// never recover its password at all.
+	public function test_an_account_without_2fa_is_not_challenged(): void {
+		$user   = self::factory()->user->create();
+		$errors = $this->reset_errors( $user, array( 'pass1' => 'a-new-password' ) );
+
+		$this->assertSame( array(), $errors->get_error_codes() );
+	}
+
+	// Merely displaying the form is not an attempt to complete the reset.
+	public function test_showing_the_form_is_not_an_attempt(): void {
+		$user = self::factory()->user->create();
+		$totp = new \Sigil\Providers\Totp();
+		$totp->handle_enrol(
+			$user,
+			array( 'secret' => self::SECRET, 'code' => \Sigil\Providers\Totp::code_at( self::SECRET, time() - 30 ) )
+		);
+
+		$this->assertSame( array(), $this->reset_errors( $user, array() )->get_error_codes() );
 	}
 
 	// Turning 2FA off is not what an administrator expects from "import".
