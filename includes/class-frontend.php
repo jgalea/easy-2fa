@@ -86,13 +86,7 @@ final class Frontend {
 			SIGIL_VERSION
 		);
 
-		wp_enqueue_script(
-			'sigil-enrol',
-			SIGIL_URL . 'assets/js/enrol.js',
-			array(),
-			SIGIL_VERSION,
-			true
-		);
+		Enrolment::enqueue_enrol_assets();
 	}
 
 	/**

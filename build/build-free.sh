@@ -19,21 +19,21 @@ rm -rf "$DIST/sigil-2fa" "$DIST/sigil-2fa.zip"
 mkdir -p "$DIST/sigil-2fa"
 
 rsync -a \
-    --exclude='pro/' \
-    --exclude='build/' \
-    --exclude='dist/' \
-    --exclude='docs/' \
-    --exclude='e2e/' \
-    --exclude='tests/' \
-    --exclude='node_modules/' \
-    --exclude='test-results/' \
-    --exclude='playwright-report/' \
-    --exclude='.git/' \
+    --exclude='/pro/' \
+    --exclude='/build/' \
+    --exclude='/dist/' \
+    --exclude='/docs/' \
+    --exclude='/e2e/' \
+    --exclude='/tests/' \
+    --exclude='/node_modules/' \
+    --exclude='/test-results/' \
+    --exclude='/playwright-report/' \
+    --exclude='/.git/' \
     --exclude='.gitignore' \
-    --exclude='.github/' \
-    --exclude='.wordpress-org/' \
+    --exclude='/.github/' \
+    --exclude='/.wordpress-org/' \
     --exclude='.distignore' \
-    --exclude='.claude/' \
+    --exclude='/.claude/' \
     --exclude='.wp-env.json' \
     --exclude='phpunit.xml.dist' \
     --exclude='playwright.config.ts' \
@@ -46,8 +46,8 @@ rsync -a \
     --exclude='.DS_Store' \
     --exclude='.phpunit.result.cache' \
     --exclude='.secret-scan-allow' \
-    --exclude='vendor/' \
-    --exclude='languages/' \
+    --exclude='/vendor/' \
+    --exclude='/languages/' \
     "$ROOT/" "$DIST/sigil-2fa/"
 
 # Translations are not shipped. Plugins hosted on wordpress.org receive their
@@ -58,7 +58,9 @@ rsync -a \
 mkdir -p "$DIST/sigil-2fa/languages"
 cp "$ROOT/languages/sigil-2fa.pot" "$DIST/sigil-2fa/languages/"
 
-# vendor/ is excluded wholesale above because a local `composer install` fills it
+# The exclusions above are anchored with a leading slash so they only match at
+# the plugin root. Unanchored, 'vendor/' would also drop assets/js/vendor/.
+# vendor/ is excluded wholesale because a local `composer install` fills it
 # with PHPUnit and the Composer autoloader, none of which ships. The passkey
 # provider loads lbuchs/webauthn by direct require, so that one committed package
 # is the only vendored code the plugin needs at runtime.
@@ -87,6 +89,40 @@ readme = re.sub(r"(?m)^Stable tag:.*$", f"Stable tag: {version}", readme, count=
 with open(readme_path, 'w', encoding='utf-8') as f:
     f.write(readme)
 PY
+
+# A missing runtime file makes a feature quietly do nothing rather than fail, so
+# check the package holds what the plugin loads before sealing it.
+REQUIRED=(
+  "sigil-2fa.php"
+  "uninstall.php"
+  "readme.txt"
+  "assets/js/enrol.js"
+  "assets/js/passkey.js"
+  "assets/js/vendor/qrcode.js"
+  "assets/css/admin.css"
+  "assets/css/login.css"
+  "assets/css/frontend.css"
+  "includes/class-plugin.php"
+  "templates/challenge.php"
+  "templates/enrol.php"
+  "templates/settings.php"
+  "vendor/lbuchs/webauthn/WebAuthn.php"
+  "languages/sigil-2fa.pot"
+)
+for file in "${REQUIRED[@]}"; do
+  if [ ! -f "$DIST/sigil-2fa/$file" ]; then
+    echo "Missing from the package: $file" >&2
+    exit 1
+  fi
+done
+
+# Nothing from the development tree should reach the package.
+for unwanted in tests e2e pro node_modules .git .github build dist; do
+  if [ -e "$DIST/sigil-2fa/$unwanted" ]; then
+    echo "Development path leaked into the package: $unwanted" >&2
+    exit 1
+  fi
+done
 
 cd "$DIST"
 zip -rqX sigil-2fa.zip sigil-2fa/

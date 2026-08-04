@@ -64,14 +64,43 @@ final class Enrolment {
 			SIGIL_VERSION
 		);
 
+		self::enqueue_enrol_assets();
+	}
+
+	/**
+	 * The QR renderer and the strings its fallback needs. Bundled rather than
+	 * fetched: the provisioning secret must not travel to a third party, and the
+	 * screen has to work on an install with no outbound network.
+	 */
+	public static function enqueue_enrol_assets(): void {
+		wp_enqueue_script(
+			'sigil-qrcode',
+			SIGIL_URL . 'assets/js/vendor/qrcode.js',
+			array(),
+			'2.0.4',
+			true
+		);
+
 		wp_enqueue_script(
 			'sigil-enrol',
 			SIGIL_URL . 'assets/js/enrol.js',
-			array(),
+			array( 'sigil-qrcode' ),
 			SIGIL_VERSION,
 			true
 		);
+
+		wp_localize_script(
+			'sigil-enrol',
+			'sigilEnrol',
+			array(
+				'i18n' => array(
+					'qrAlt'         => __( 'Authenticator setup QR code', 'sigil-2fa' ),
+					'qrUnavailable' => __( 'Scanning is unavailable here. Enter the secret key manually in your authenticator app.', 'sigil-2fa' ),
+				),
+			)
+		);
 	}
+
 
 	public function render_setup_page(): void {
 		$user_id = (int) get_current_user_id();

@@ -109,3 +109,13 @@
 .sigil-enrol__form--remove {
 	margin-top: 0.5em;
 }
+
+/* The QR is drawn scalable so it stays sharp; give it a sensible fixed size
+   rather than letting it fill whatever container it lands in. */
+.sigil-totp-qr svg {
+	display: block;
+	width: 220px;
+	max-width: 100%;
+	height: auto;
+	margin: 0 0 16px;
+}

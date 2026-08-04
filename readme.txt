@@ -55,6 +55,13 @@ Three ways back in if a second factor is lost:
 
 Two-factor authentication does not apply to application passwords, which authenticate REST API and XML-RPC requests. The settings screen documents this, and application passwords can be disabled per role.
 
+== Third-party libraries ==
+
+* QR Code Generator for JavaScript 2.0.4 by Kazuhiko Arase, MIT licensed, bundled unmodified at `assets/js/vendor/qrcode.js` (https://github.com/kazuhikoarase/qrcode-generator). Draws the authenticator QR in the browser.
+* WebAuthn by Lukas Buchs, bundled in `vendor/`, used to verify passkey registrations and assertions.
+
+Neither contacts an external service.
+
 == Installation ==
 
 1. Install through Plugins → Add New and search for "Sigil", or upload the plugin files to `/wp-content/plugins/sigil-2fa/`.
@@ -96,6 +103,7 @@ Yes. Settings → Sigil lets you pick exactly which roles are required, and set 
 == Changelog ==
 
 = 0.2.0 =
+* Authenticator setup now shows a scannable QR code. It is drawn in the browser by a bundled MIT-licensed library, so the provisioning secret is never sent anywhere.
 * Security: a verification attempt now consumes its challenge token before the code is checked, so a burst of parallel guesses cannot outrun the attempt counter, and two simultaneous completions cannot both start a session. Mistyping a code still lets you try again; the screen carries a fresh token.
 * Multisite support. One set of credentials and one policy for the whole network, edited under Network Admin, with rate limiting that counts across sites. Upgrading an existing install carries its policy and passkeys up to network scope.
 * Front-end enrolment with the `[sigil_2fa]` shortcode, for sites whose users have no dashboard access. Enforcement sends people there when the page exists.

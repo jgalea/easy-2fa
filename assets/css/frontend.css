@@ -185,3 +185,11 @@
 	margin-top: 0.75rem;
 	font-size: 0.875rem;
 }
+
+.sigil-enrol--frontend .sigil-totp-qr svg {
+	display: block;
+	width: 220px;
+	max-width: 100%;
+	height: auto;
+	margin: 0 0 1rem;
+}

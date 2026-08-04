@@ -22,6 +22,8 @@ Sigil does one job completely instead of holding half of it back. Passkeys, per-
 
 Require 2FA per role or by capability, with a grace period so existing users get time to enrol. A "2FA" column on the Users screen shows who has set it up.
 
+Authenticator setup shows a scannable QR, drawn in the browser by a bundled MIT library so the provisioning secret never leaves the page.
+
 ## Enrolment without the dashboard
 
 Put `[sigil_2fa]` on a page and users manage their methods there. Sites that keep members out of wp-admin need this, and anyone required to enrol is sent to that page instead of an admin screen they cannot open.
