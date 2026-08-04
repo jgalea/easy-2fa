@@ -42,6 +42,12 @@ export async function login(page: Page, user = 'admin', pass = 'password') {
 	await page.fill('#user_login', user);
 	await page.fill('#user_pass', pass);
 	await page.click('#wp-submit');
+
+	// Wait for the submit to land before anyone navigates away. Without this a
+	// following goto() can abort the login POST and the auth cookie is never
+	// set, which is fast enough to hide locally and fails on slower CI. Not a
+	// URL check: with 2FA enrolled the challenge screen keeps the same URL.
+	await page.waitForLoadState('networkidle');
 }
 
 export async function logout(page: Page) {
