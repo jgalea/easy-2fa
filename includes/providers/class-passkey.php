@@ -511,24 +511,35 @@ final class Passkey implements Provider {
 		$host = wp_parse_url( home_url(), PHP_URL_HOST );
 		$host = is_string( $host ) ? strtolower( $host ) : '';
 
-		$default = self::resolve_rp_id( $host, \Sigil\Network::primary_host() );
-
 		/**
 		 * Filter the WebAuthn relying-party ID (registrable domain).
 		 *
-		 * @param string $default Hostname derived from home_url(), widened to the
-		 *                        network domain where the site sits under it.
+		 * Defaults to this site's own host, which is what the credential was
+		 * created for. A network that wants one passkey to cover its subdomain
+		 * sites can widen it deliberately:
+		 *
+		 *     add_filter( 'sigil_rp_id', static function ( $host ) {
+		 *         return \Sigil\Providers\Passkey::resolve_rp_id( $host, \Sigil\Network::primary_host() );
+		 *     } );
+		 *
+		 * Widening is opt-in because it cuts both ways: it makes every existing
+		 * credential on the old host unusable, and it lets any site under that
+		 * domain ask for assertions, which matters on a network whose sites have
+		 * different administrators.
+		 *
+		 * @param string $host Hostname derived from home_url().
 		 */
-		$rp_id = apply_filters( 'sigil_rp_id', $default );
+		$rp_id = apply_filters( 'sigil_rp_id', $host );
 
 		return is_string( $rp_id ) && '' !== $rp_id ? $rp_id : $host;
 	}
 
 	/**
-	 * On a network, anchor credentials to the network domain so a passkey
-	 * registered on one site works on its siblings. Only where the site actually
-	 * sits under that domain: a mapped domain is a different registrable suffix
-	 * and the browser would refuse to sign for it.
+	 * Widen a host to the network domain where the site sits under it, for sites
+	 * that opt into network-wide passkeys through the sigil_rp_id filter.
+	 *
+	 * A mapped domain is a different registrable suffix, so it keeps its own
+	 * host: the browser would refuse to sign for anything else.
 	 */
 	public static function resolve_rp_id( string $host, string $network_host ): string {
 		if ( '' === $host || '' === $network_host ) {

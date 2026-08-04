@@ -33,7 +33,9 @@ Put `[sigil_2fa]` on any page and users can set up and manage their methods ther
 
 **Multisite**
 
-Accounts are network-wide in WordPress, so second factors are too. One passkey or authenticator covers every site on the network, the policy is set once under Network Admin, and the rate limiter counts across the network rather than per site. On a network, resetting another user's 2FA is a Network Admin action, which is how WordPress governs user editing there.
+Accounts are network-wide in WordPress, so second factors are too. An authenticator or backup codes cover every site on the network, the policy is set once under Network Admin, and the rate limiter counts across the network rather than per site. On a network, resetting another user's 2FA is a Network Admin action, which is how WordPress governs user editing there.
+
+Passkeys are bound to the domain they were created for, so by default a passkey covers the site it was registered on. A network under one operator can widen that to cover every subdomain site with the `sigil_rp_id` filter. It is opt-in because widening lets any site under that domain request assertions, which matters when sites have different administrators.
 
 **REST API**
 
@@ -81,7 +83,7 @@ Passkeys need PHP 8.0 or newer. On older PHP the plugin still runs and offers au
 
 = Does it work on multisite? =
 
-Yes. The policy is set once for the network under Network Admin → Settings → Sigil, and a user's second factor works on every site because WordPress accounts are network-wide. A passkey covers sibling sites on a subdomain network; a site on its own mapped domain needs its own passkey, because a passkey is bound to the domain it was created for.
+Yes. The policy is set once for the network under Network Admin → Settings → Sigil, and a user's authenticator or backup codes work on every site because WordPress accounts are network-wide. Passkeys are bound to the domain they were created for, so each site gets its own unless you widen that with the `sigil_rp_id` filter.
 
 = Can users set up 2FA without access to wp-admin? =
 
@@ -94,7 +96,7 @@ Yes. Settings → Sigil lets you pick exactly which roles are required, and set 
 == Changelog ==
 
 = 0.2.0 =
-* Multisite support. One set of credentials and one policy for the whole network, edited under Network Admin, with rate limiting that counts across sites. Passkeys anchor to the network domain where a site sits under it.
+* Multisite support. One set of credentials and one policy for the whole network, edited under Network Admin, with rate limiting that counts across sites. Upgrading an existing install carries its policy and passkeys up to network scope.
 * Front-end enrolment with the `[sigil_2fa]` shortcode, for sites whose users have no dashboard access. Enforcement sends people there when the page exists.
 * A REST API under `sigil/v1` for reading 2FA state, managing methods, editing the policy, and completing a login challenge from a decoupled front end.
 * Security: resetting a user's 2FA treated a missing actor as an exemption rather than as nobody. That was reachable only from the command line before this release, but it is now refused outright, with the unattended path named separately.

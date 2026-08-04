@@ -33,6 +33,29 @@ class Test_Rp_Id extends WP_UnitTestCase {
 		$this->assertSame( 'example.com.evil.test', \Sigil\Providers\Passkey::resolve_rp_id( 'example.com.evil.test', 'example.com' ) );
 	}
 
+	// Widening is opt-in. Applying it by default would kill every credential
+	// already registered on the site's own host, and would let any site under
+	// the network domain ask for assertions.
+	public function test_the_default_does_not_widen(): void {
+		$host = wp_parse_url( home_url(), PHP_URL_HOST );
+
+		$this->assertSame( strtolower( (string) $host ), \Sigil\Providers\Passkey::rp_id() );
+	}
+
+	public function test_a_site_can_opt_into_network_wide_passkeys(): void {
+		$widen = static function ( $host ) {
+			return \Sigil\Providers\Passkey::resolve_rp_id( (string) $host, 'example.org' );
+		};
+
+		add_filter( 'sigil_rp_id', $widen );
+		$expected = \Sigil\Providers\Passkey::resolve_rp_id(
+			strtolower( (string) wp_parse_url( home_url(), PHP_URL_HOST ) ),
+			'example.org'
+		);
+		$this->assertSame( $expected, \Sigil\Providers\Passkey::rp_id() );
+		remove_filter( 'sigil_rp_id', $widen );
+	}
+
 	public function test_the_filter_still_wins(): void {
 		$override = static function (): string {
 			return 'forced.example';

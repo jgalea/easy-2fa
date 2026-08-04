@@ -125,15 +125,22 @@ final class Frontend {
 	 * Note where the enrolment page lives, so enforcement can send people there
 	 * without the site having to configure anything.
 	 *
-	 * Rendering happens for anonymous visitors and carries no capability, so this
-	 * only ever fills an empty slot, and only from a published page. Publishing
-	 * pages is an editor-and-above capability; a contributor or author writing a
-	 * post cannot claim the slot, and nobody can take it from a site that has
-	 * already set one. Sites that want it pinned can use the sigil_setup_url
-	 * filter, which wins over this entirely.
+	 * Only an administrator viewing the page claims the slot. Rendering itself
+	 * carries no capability, and the page is not neutral ground: it prints
+	 * one-time backup codes and an authenticator secret for whoever is signed in.
+	 * Anyone who could publish a page containing the shortcode could otherwise
+	 * aim forced enrolment at a page they control. It also only ever fills an
+	 * empty slot. Sites that want it pinned can use the sigil_setup_url filter,
+	 * which wins over this entirely.
 	 */
 	private function remember_page(): void {
 		if ( self::page_id() > 0 ) {
+			return;
+		}
+
+		// manage_options, not the network capability: the page is a post, and
+		// posts belong to one site.
+		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
 

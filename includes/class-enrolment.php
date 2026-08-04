@@ -186,8 +186,15 @@ final class Enrolment {
 			);
 		}
 
-		$remaining = $methods;
-		unset( $remaining[ $provider_id ] );
+		// Count what would still be usable, not what rows would remain. A row
+		// whose provider is unavailable or whose credentials are gone is not a
+		// second factor, and leaving on that basis strands the user.
+		$remaining = array();
+		foreach ( Providers::instance()->enrolled_for( $user_id ) as $provider ) {
+			if ( $provider->id() !== $provider_id ) {
+				$remaining[ $provider->id() ] = true;
+			}
+		}
 
 		if ( array() === $remaining && Policy::required_for( $user_id ) ) {
 			return new \WP_Error(

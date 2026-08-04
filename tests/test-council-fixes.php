@@ -80,21 +80,51 @@ class Test_Council_Fixes extends WP_UnitTestCase {
 		do_shortcode( '[sigil_2fa]' );
 	}
 
+	private function render_as_admin( int $post_id ): void {
+		$admin = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		if ( is_multisite() ) {
+			grant_super_admin( $admin );
+		}
+		wp_set_current_user( $admin );
+		$this->render( $post_id );
+		wp_set_current_user( 0 );
+	}
+
 	public function test_a_published_page_claims_the_empty_slot(): void {
+		$page = $this->make_content( array() );
+		$this->render_as_admin( $page );
+
+		$this->assertSame( $page, \Sigil\Frontend::page_id() );
+	}
+
+	// The page prints one-time backup codes and an authenticator secret for
+	// whoever is signed in, so an anonymous view must not be able to nominate it.
+	public function test_an_anonymous_view_does_not_claim_the_slot(): void {
 		$page = $this->make_content( array() );
 		$this->render( $page );
 
-		$this->assertSame( $page, \Sigil\Frontend::page_id() );
+		$this->assertSame( 0, \Sigil\Frontend::page_id() );
+	}
+
+	public function test_an_editor_cannot_claim_the_slot(): void {
+		$page   = $this->make_content( array() );
+		$editor = self::factory()->user->create( array( 'role' => 'editor' ) );
+
+		wp_set_current_user( $editor );
+		$this->render( $page );
+		wp_set_current_user( 0 );
+
+		$this->assertSame( 0, \Sigil\Frontend::page_id() );
 	}
 
 	// Rendering is anonymous and carries no capability, so a second page must not
 	// be able to take the destination from a site that already has one.
 	public function test_a_later_page_cannot_steal_the_slot(): void {
 		$first = $this->make_content( array() );
-		$this->render( $first );
+		$this->render_as_admin( $first );
 
 		$attacker = $this->make_content( array( 'post_title' => 'Free iPhone' ) );
-		$this->render( $attacker );
+		$this->render_as_admin( $attacker );
 
 		$this->assertSame( $first, \Sigil\Frontend::page_id() );
 	}
@@ -103,14 +133,14 @@ class Test_Council_Fixes extends WP_UnitTestCase {
 	// author writing a post must not be able to claim it.
 	public function test_a_post_cannot_claim_the_slot(): void {
 		$post = $this->make_content( array( 'post_type' => 'post' ) );
-		$this->render( $post );
+		$this->render_as_admin( $post );
 
 		$this->assertSame( 0, \Sigil\Frontend::page_id() );
 	}
 
 	public function test_an_unpublished_page_cannot_claim_the_slot(): void {
 		$draft = $this->make_content( array( 'post_status' => 'draft' ) );
-		$this->render( $draft );
+		$this->render_as_admin( $draft );
 
 		$this->assertSame( 0, \Sigil\Frontend::page_id() );
 	}
@@ -119,7 +149,7 @@ class Test_Council_Fixes extends WP_UnitTestCase {
 	// unpublished after the fact, and enforcement must stop pointing at it.
 	public function test_a_page_that_stops_qualifying_is_dropped(): void {
 		$page = $this->make_content( array() );
-		$this->render( $page );
+		$this->render_as_admin( $page );
 		$this->assertSame( $page, \Sigil\Frontend::page_id() );
 
 		wp_update_post(
@@ -135,7 +165,7 @@ class Test_Council_Fixes extends WP_UnitTestCase {
 
 	public function test_the_enrolment_page_is_stored_per_site(): void {
 		$page = $this->make_content( array() );
-		$this->render( $page );
+		$this->render_as_admin( $page );
 
 		$this->assertSame( $page, (int) get_option( \Sigil\Frontend::PAGE_OPTION ) );
 

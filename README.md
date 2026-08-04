@@ -28,7 +28,9 @@ Put `[sigil_2fa]` on a page and users manage their methods there. Sites that kee
 
 ## Multisite
 
-WordPress accounts are network-wide, so second factors are too. One passkey or authenticator covers every site, the policy is set once under Network Admin, and the rate limiter counts across the network rather than per site. Passkeys anchor to the network domain where a site sits under it; a site on its own mapped domain needs its own passkey, since a passkey is bound to the domain it was created for.
+WordPress accounts are network-wide, so second factors are too. An authenticator or backup codes cover every site, the policy is set once under Network Admin, and the rate limiter counts across the network rather than per site.
+
+Passkeys are bound to the domain they were created for, so each site gets its own by default. A network under a single operator can widen that with the `sigil_rp_id` filter so one passkey covers every subdomain site. Opt-in, because widening lets any site under that domain request assertions.
 
 Resetting another user's 2FA is a Network Admin action on a network, matching how WordPress governs user editing there.
 

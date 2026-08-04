@@ -158,7 +158,29 @@ final class REST {
 	public function can_read_user( \WP_REST_Request $request ): bool {
 		$id = (int) $request['id'];
 
-		return get_current_user_id() === $id || current_user_can( 'list_users' );
+		if ( ! is_user_logged_in() ) {
+			return false;
+		}
+
+		if ( get_current_user_id() === $id ) {
+			return true;
+		}
+
+		if ( ! current_user_can( 'list_users' ) ) {
+			return false;
+		}
+
+		// list_users is a site capability but accounts are network-wide, so
+		// without this a site administrator could walk the whole network and
+		// learn which accounts, including ones with no membership here, are
+		// missing a second factor.
+		if ( Network::is_network()
+			&& ! current_user_can( 'manage_network_users' )
+			&& ! is_user_member_of_blog( $id, get_current_blog_id() ) ) {
+			return false;
+		}
+
+		return true;
 	}
 
 	public function can_edit_user( \WP_REST_Request $request ): bool {
