@@ -11,9 +11,13 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
  * plugin-owned table and sweeping its options has no core API, and caching a
  * result set here would be meaningless since nothing reads it afterwards.
  *
+ * The table name is a $wpdb prefix plus a literal. An identifier cannot be a
+ * bound placeholder, so it is interpolated and the sniff is disabled for it.
+ *
  * phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery
  * phpcs:disable WordPress.DB.DirectDatabaseQuery.NoCaching
  * phpcs:disable WordPress.DB.DirectDatabaseQuery.SchemaChange
+ * phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
  */
 function sigil_uninstall_site(): void {
 	global $wpdb;

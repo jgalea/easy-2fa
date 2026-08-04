@@ -116,13 +116,19 @@ final class Schema {
 			// INSERT IGNORE so a credential already carried over, or one that
 			// somehow exists on two sites, does not abort the whole migration.
 			// The old table is left in place: this is not a step to undo blindly.
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- both table names are plugin-owned, built from prefixes.
+			//
+			// Both names are table identifiers built from $wpdb prefixes, and an
+			// identifier cannot be a bound placeholder. Disabled as a pair rather
+			// than ignored on one line, because the interpolation sits inside the
+			// string on the lines below.
+			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
 			$wpdb->query(
 				"INSERT IGNORE INTO {$network_table}
 					(user_id, credential_id, public_key, sign_count, transports, label, created_at, last_used_at)
 				 SELECT user_id, credential_id, public_key, sign_count, transports, label, created_at, last_used_at
 				 FROM {$legacy_table}"
 			);
+			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
 		}
 	}
 }
