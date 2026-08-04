@@ -163,6 +163,15 @@ final class Email implements Provider {
 			$site_name
 		);
 
+		/**
+		 * Filter the subject of the login code email.
+		 *
+		 * @param string   $subject   Default subject.
+		 * @param \WP_User $user      Recipient.
+		 * @param string   $site_name Site name as it appears to the reader.
+		 */
+		$subject = (string) apply_filters( 'sigil_email_subject', $subject, $user, $site_name );
+
 		$message = sprintf(
 			/* translators: 1: site name, 2: six-digit code */
 			__(
@@ -173,17 +182,50 @@ final class Email implements Provider {
 			$code
 		);
 
+		/**
+		 * Filter the body of the login code email.
+		 *
+		 * The code is passed so a replacement body can place it. Whatever is
+		 * returned is sent as-is, so a template that drops the code leaves the
+		 * reader unable to sign in.
+		 *
+		 * @param string   $message   Default body.
+		 * @param \WP_User $user      Recipient.
+		 * @param string   $code      The one-time code.
+		 * @param string   $site_name Site name as it appears to the reader.
+		 */
+		$message = (string) apply_filters( 'sigil_email_message', $message, $user, $code, $site_name );
+
 		$from = get_option( 'admin_email' );
 		if ( ! is_string( $from ) || ! is_email( $from ) ) {
 			$host = wp_parse_url( home_url(), PHP_URL_HOST );
 			$from = is_string( $host ) && '' !== $host ? 'wordpress@' . $host : 'wordpress@example.com';
 		}
 
+		/**
+		 * Filter the address the login code is sent from.
+		 *
+		 * @param string   $from Admin email, or wordpress@ the site host.
+		 * @param \WP_User $user Recipient.
+		 */
+		$from = (string) apply_filters( 'sigil_email_from', $from, $user );
+		if ( ! is_email( $from ) ) {
+			$from = (string) get_option( 'admin_email' );
+		}
+
+		/**
+		 * Filter the sender name the login code is sent under.
+		 *
+		 * @param string   $from_name Site name.
+		 * @param \WP_User $user      Recipient.
+		 */
+		$from_name = (string) apply_filters( 'sigil_email_from_name', $site_name, $user );
+
 		$from_filter = static function () use ( $from ): string {
 			return $from;
 		};
-		$from_name_filter = static function () use ( $site_name ): string {
-			return $site_name;
+		$from_name_filter = static function () use ( $from_name ): string {
+			return $from_name;
 		};
 
 		add_filter( 'wp_mail_from', $from_filter, 999 );
