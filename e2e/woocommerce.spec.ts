@@ -11,10 +11,21 @@ let available = true;
 test.beforeAll(() => {
 	try {
 		cli(['plugin', 'install', 'woocommerce', '--activate']);
+
+		// A fresh install has no My Account page, so the endpoint has nothing to
+		// hang off and every assertion here would be about a 404 instead. This
+		// passed locally only because the page already existed.
+		cli(['wc', 'tool', 'run', 'install_pages', '--user=1']);
+
 		// The tab lives behind the licence, like every other paid feature.
 		cli(['option', 'update', 'easy2fa_license',
 			'{"key":"DEV-TEST-KEY","status":"active","expires_at":0,"checked_at":0}', '--format=json']);
 		cli(['rewrite', 'flush', '--hard']);
+
+		const accountPage = cli(['option', 'get', 'woocommerce_myaccount_page_id']);
+		if (!/^\d+$/.test(accountPage) || accountPage === '0') {
+			available = false;
+		}
 	} catch {
 		available = false;
 	}
