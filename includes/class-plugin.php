@@ -22,6 +22,7 @@ final class Plugin {
 
 	public function boot(): void {
 		require_once SIGIL_DIR . 'includes/class-crypto.php';
+		require_once SIGIL_DIR . 'includes/class-network.php';
 		require_once SIGIL_DIR . 'includes/class-store.php';
 		require_once SIGIL_DIR . 'includes/class-schema.php';
 		Schema::instance();

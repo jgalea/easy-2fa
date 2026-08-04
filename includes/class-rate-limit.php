@@ -17,11 +17,11 @@ final class Rate_Limit {
 		}
 
 		$tk    = self::transient_key( $key );
-		$count = (int) get_transient( $tk );
+		$count = (int) Network::get_transient( $tk );
 		if ( $count < 0 ) {
 			$count = 0;
 		}
-		set_transient( $tk, $count + 1, self::WINDOW );
+		Network::set_transient( $tk, $count + 1, self::WINDOW );
 	}
 
 	public static function blocked( string $key ): bool {
@@ -29,7 +29,7 @@ final class Rate_Limit {
 			return false;
 		}
 
-		return (int) get_transient( self::transient_key( $key ) ) >= self::MAX_ATTEMPTS;
+		return (int) Network::get_transient( self::transient_key( $key ) ) >= self::MAX_ATTEMPTS;
 	}
 
 	public static function clear( string $key ): void {
@@ -37,7 +37,7 @@ final class Rate_Limit {
 			return;
 		}
 
-		delete_transient( self::transient_key( $key ) );
+		Network::delete_transient( self::transient_key( $key ) );
 	}
 
 	private static function transient_key( string $key ): string {

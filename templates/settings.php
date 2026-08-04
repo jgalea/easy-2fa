@@ -31,6 +31,19 @@ $updated = ! empty( $updated );
 		<div class="notice notice-success is-dismissible"><p><?php echo esc_html__( 'Settings saved.', 'sigil-2fa' ); ?></p></div>
 	<?php endif; ?>
 
+	<?php if ( \Sigil\Network::is_network() ) : ?>
+		<div class="notice notice-info" style="padding:12px 16px;max-width:720px;">
+			<p style="margin:0;">
+				<?php
+				echo esc_html__(
+					'This policy applies to every site on the network. Accounts are network-wide, so a passkey or authenticator enrolled on one site works on all of them, and only Network Admins can reset another account.',
+					'sigil-2fa'
+				);
+				?>
+			</p>
+		</div>
+	<?php endif; ?>
+
 	<div class="notice notice-info" style="padding:12px 16px;max-width:720px;">
 		<p style="margin:0 0 8px;">
 			<strong><?php echo esc_html__( 'What 2FA protects', 'sigil-2fa' ); ?></strong>

@@ -510,14 +510,40 @@ final class Passkey implements Provider {
 		$host = wp_parse_url( home_url(), PHP_URL_HOST );
 		$host = is_string( $host ) ? strtolower( $host ) : '';
 
+		$default = self::resolve_rp_id( $host, \Sigil\Network::primary_host() );
+
 		/**
 		 * Filter the WebAuthn relying-party ID (registrable domain).
 		 *
-		 * @param string $host Hostname derived from home_url().
+		 * @param string $default Hostname derived from home_url(), widened to the
+		 *                        network domain where the site sits under it.
 		 */
-		$rp_id = apply_filters( 'sigil_rp_id', $host );
+		$rp_id = apply_filters( 'sigil_rp_id', $default );
 
 		return is_string( $rp_id ) && '' !== $rp_id ? $rp_id : $host;
+	}
+
+	/**
+	 * On a network, anchor credentials to the network domain so a passkey
+	 * registered on one site works on its siblings. Only where the site actually
+	 * sits under that domain: a mapped domain is a different registrable suffix
+	 * and the browser would refuse to sign for it.
+	 */
+	public static function resolve_rp_id( string $host, string $network_host ): string {
+		if ( '' === $host || '' === $network_host ) {
+			return $host;
+		}
+
+		if ( $host === $network_host ) {
+			return $network_host;
+		}
+
+		$suffix = '.' . $network_host;
+		if ( substr( $host, -strlen( $suffix ) ) === $suffix ) {
+			return $network_host;
+		}
+
+		return $host;
 	}
 
 	private function challenge_key( int $user_id, string $purpose ): string {

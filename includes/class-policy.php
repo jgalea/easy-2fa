@@ -40,7 +40,7 @@ final class Policy {
 	 * }
 	 */
 	public static function get(): array {
-		$raw = get_option( self::OPTION_KEY, [] );
+		$raw = Network::get_option( self::OPTION_KEY, [] );
 		if ( ! is_array( $raw ) ) {
 			$raw = [];
 		}
@@ -53,7 +53,7 @@ final class Policy {
 	 */
 	public static function update( array $policy ): void {
 		$merged = array_merge( self::get(), $policy );
-		update_option( self::OPTION_KEY, self::sanitize( $merged ), false );
+		Network::update_option( self::OPTION_KEY, self::sanitize( $merged ) );
 	}
 
 	public static function required_for( int $user_id ): bool {

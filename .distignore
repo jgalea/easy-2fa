@@ -18,6 +18,7 @@
 .DS_Store
 .wp-env.json
 phpunit.xml.dist
+phpunit-multisite.xml.dist
 playwright.config.ts
 package.json
 package-lock.json

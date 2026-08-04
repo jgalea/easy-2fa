@@ -24,14 +24,13 @@ final class Schema {
 	// would throw. A passkey credential can only be created during admin
 	// enrolment, so checking here guarantees the table exists before one can.
 	public function maybe_install(): void {
-		if ( get_option( 'sigil_db_version' ) !== SIGIL_VERSION ) {
+		if ( Network::get_option( 'sigil_db_version' ) !== SIGIL_VERSION ) {
 			self::install();
 		}
 	}
 
 	public static function table(): string {
-		global $wpdb;
-		return $wpdb->prefix . 'sigil_credentials';
+		return Network::table_prefix() . 'sigil_credentials';
 	}
 
 	public static function install(): void {
@@ -58,6 +57,6 @@ final class Schema {
 		) {$charset_collate};";
 
 		dbDelta( $sql );
-		update_option( 'sigil_db_version', SIGIL_VERSION, false );
+		Network::update_option( 'sigil_db_version', SIGIL_VERSION );
 	}
 }

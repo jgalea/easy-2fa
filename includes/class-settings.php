@@ -18,22 +18,36 @@ final class Settings {
 	}
 
 	private function __construct() {
-		add_action( 'admin_menu', array( $this, 'register_menu' ) );
+		// On a network the policy covers every site, so it belongs to the network
+		// administrator and lives under Network Admin -> Settings.
+		add_action( Network::is_network() ? 'network_admin_menu' : 'admin_menu', array( $this, 'register_menu' ) );
 		add_action( 'admin_post_sigil_save_settings', array( $this, 'handle_save' ) );
 	}
 
 	public function register_menu(): void {
+		if ( Network::is_network() ) {
+			add_submenu_page(
+				'settings.php',
+				__( 'Sigil', 'sigil-2fa' ),
+				__( 'Sigil', 'sigil-2fa' ),
+				Network::manage_capability(),
+				'sigil-2fa',
+				array( $this, 'render_page' )
+			);
+			return;
+		}
+
 		add_options_page(
 			__( 'Sigil', 'sigil-2fa' ),
 			__( 'Sigil', 'sigil-2fa' ),
-			'manage_options',
+			Network::manage_capability(),
 			'sigil-2fa',
 			array( $this, 'render_page' )
 		);
 	}
 
 	public function render_page(): void {
-		if ( ! current_user_can( 'manage_options' ) ) {
+		if ( ! current_user_can( Network::manage_capability() ) ) {
 			wp_die( esc_html__( 'You do not have permission to access this page.', 'sigil-2fa' ) );
 		}
 
@@ -50,7 +64,7 @@ final class Settings {
 	}
 
 	public function handle_save(): void {
-		if ( ! current_user_can( 'manage_options' ) ) {
+		if ( ! current_user_can( Network::manage_capability() ) ) {
 			wp_die( esc_html__( 'You do not have permission to save these settings.', 'sigil-2fa' ) );
 		}
 
@@ -95,15 +109,7 @@ final class Settings {
 			)
 		);
 
-		wp_safe_redirect(
-			add_query_arg(
-				array(
-					'page'    => 'sigil-2fa',
-					'updated' => '1',
-				),
-				admin_url( 'options-general.php' )
-			)
-		);
+		wp_safe_redirect( add_query_arg( 'updated', '1', Network::settings_url() ) );
 		exit;
 	}
 }

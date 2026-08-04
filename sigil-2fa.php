@@ -28,6 +28,7 @@ require_once SIGIL_DIR . 'includes/class-plugin.php';
 register_activation_hook(
 	__FILE__,
 	static function (): void {
+		require_once SIGIL_DIR . 'includes/class-network.php';
 		require_once SIGIL_DIR . 'includes/class-schema.php';
 		Sigil\Schema::install();
 	}

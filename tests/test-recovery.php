@@ -9,8 +9,21 @@ class Test_Recovery extends WP_UnitTestCase {
 		\Sigil\Schema::install();
 	}
 
+	/**
+	 * Someone who can actually edit other users in this install. Core maps
+	 * edit_users to manage_network_users on a network, so resetting another
+	 * account's 2FA is a Network Admin job there, not a site administrator's.
+	 */
+	private function user_manager(): int {
+		$id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		if ( is_multisite() ) {
+			grant_super_admin( $id );
+		}
+		return $id;
+	}
+
 	public function test_admin_can_reset_another_user(): void {
-		$admin = self::factory()->user->create( [ 'role' => 'administrator' ] );
+		$admin = $this->user_manager();
 		$user  = self::factory()->user->create( [ 'role' => 'editor' ] );
 		\Sigil\Store::set_method( $user, 'totp', [ 'secret' => 'x' ] );
 		$this->assertTrue( \Sigil\Recovery::reset_user( $user, $admin ) );
@@ -26,7 +39,7 @@ class Test_Recovery extends WP_UnitTestCase {
 	}
 
 	public function test_reset_clears_passkey_credentials_too(): void {
-		$admin = self::factory()->user->create( [ 'role' => 'administrator' ] );
+		$admin = $this->user_manager();
 		$user  = self::factory()->user->create();
 		\Sigil\Credentials::add( $user, 'cred-x', 'pk', 0, 'Phone', 'internal' );
 		\Sigil\Recovery::reset_user( $user, $admin );
@@ -34,7 +47,7 @@ class Test_Recovery extends WP_UnitTestCase {
 	}
 
 	public function test_reset_is_logged(): void {
-		$admin = self::factory()->user->create( [ 'role' => 'administrator' ] );
+		$admin = $this->user_manager();
 		$user  = self::factory()->user->create();
 		\Sigil\Store::set_method( $user, 'totp', [ 'secret' => 'x' ] );
 		\Sigil\Recovery::reset_user( $user, $admin );
