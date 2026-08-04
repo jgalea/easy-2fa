@@ -75,7 +75,7 @@ final class Frontend {
 	}
 
 	public function enqueue_assets(): void {
-		if ( ! $this->post_has_shortcode() ) {
+		if ( ! $this->post_has_shortcode() && ! (bool) apply_filters( 'sigil_needs_frontend_assets', false ) ) {
 			return;
 		}
 

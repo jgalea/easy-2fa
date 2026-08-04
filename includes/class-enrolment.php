@@ -497,6 +497,19 @@ final class Enrolment {
 			);
 		}
 
+		/**
+		 * Filter where the user lands after changing their 2FA methods.
+		 *
+		 * Runs through wp_safe_redirect(), so an off-site value is refused.
+		 *
+		 * @param string $url         Where they would have gone.
+		 * @param int    $user_id     Whose methods changed.
+		 * @param string $status      'success' or 'error'.
+		 * @param string $code        Machine-readable outcome, e.g. 'enrolled'.
+		 * @param string $provider_id The method involved, when there is one.
+		 */
+		$url = (string) apply_filters( 'sigil_enrol_redirect', $url, $user_id, $status, $code, $provider_id );
+
 		wp_safe_redirect( $url );
 		exit;
 	}

@@ -20,12 +20,13 @@ class Test_Pro_Features extends WP_UnitTestCase {
 			$this->markTestSkipped( 'pro add-on not installed' );
 		}
 
-		foreach ( array( 'class-trusted-devices', 'class-method-policy', 'class-branding', 'class-portability', 'class-password-reset' ) as $file ) {
+		foreach ( array( 'class-trusted-devices', 'class-method-policy', 'class-branding', 'class-portability', 'class-password-reset', 'class-destinations' ) as $file ) {
 			require_once SIGIL_DIR . 'pro/' . $file . '.php';
 		}
 	}
 
 	public function tear_down(): void {
+		delete_option( \Easy2FA\Pro\Destinations::OPTION );
 		delete_option( \Easy2FA\Pro\Method_Policy::OPTION );
 		delete_option( \Easy2FA\Pro\Branding::OPTION );
 		remove_all_filters( 'sigil_providers' );
@@ -256,6 +257,61 @@ class Test_Pro_Features extends WP_UnitTestCase {
 		);
 
 		$this->assertSame( array(), $this->reset_errors( $user, array() )->get_error_codes() );
+	}
+
+	private function enrolled_user(): int {
+		$user = self::factory()->user->create();
+		$totp = new \Sigil\Providers\Totp();
+		$totp->handle_enrol(
+			$user,
+			array( 'secret' => self::SECRET, 'code' => \Sigil\Providers\Totp::code_at( self::SECRET, time() - 30 ) )
+		);
+
+		return (int) $user;
+	}
+
+	public function test_setup_sends_the_user_on_once_they_hold_a_factor(): void {
+		\Easy2FA\Pro\Destinations::update( home_url( '/members/' ) );
+		\Easy2FA\Pro\Destinations::instance();
+
+		$this->assertSame(
+			home_url( '/members/' ),
+			apply_filters( 'sigil_enrol_redirect', 'https://example.org/back', $this->enrolled_user(), 'success', 'enrolled', 'totp' )
+		);
+	}
+
+	// Part-way through, the setup screen is still where they need to be.
+	public function test_setup_does_not_redirect_before_anything_is_enrolled(): void {
+		\Easy2FA\Pro\Destinations::update( home_url( '/members/' ) );
+		\Easy2FA\Pro\Destinations::instance();
+
+		$bare = self::factory()->user->create();
+
+		$this->assertSame(
+			'https://example.org/back',
+			apply_filters( 'sigil_enrol_redirect', 'https://example.org/back', $bare, 'success', 'enrolled', 'totp' )
+		);
+	}
+
+	// Backup codes are shown once and never again, so that screen is the one
+	// place nobody should be sent away from.
+	public function test_setup_never_redirects_off_the_backup_code_display(): void {
+		\Easy2FA\Pro\Destinations::update( home_url( '/members/' ) );
+		\Easy2FA\Pro\Destinations::instance();
+
+		$this->assertSame(
+			'https://example.org/back',
+			apply_filters( 'sigil_enrol_redirect', 'https://example.org/back', $this->enrolled_user(), 'success', 'enrolled_backup', 'totp' )
+		);
+	}
+
+	public function test_setup_leaves_removals_and_failures_alone(): void {
+		\Easy2FA\Pro\Destinations::update( home_url( '/members/' ) );
+		\Easy2FA\Pro\Destinations::instance();
+		$user = $this->enrolled_user();
+
+		$this->assertSame( 'https://example.org/back', apply_filters( 'sigil_enrol_redirect', 'https://example.org/back', $user, 'success', 'removed', 'totp' ) );
+		$this->assertSame( 'https://example.org/back', apply_filters( 'sigil_enrol_redirect', 'https://example.org/back', $user, 'error', 'enrolled', 'totp' ) );
 	}
 
 	// Turning 2FA off is not what an administrator expects from "import".

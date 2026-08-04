@@ -1,0 +1,68 @@
+import { test, expect } from '@playwright/test';
+import { execFileSync } from 'node:child_process';
+import { resetTwoFactor, login } from './helpers';
+
+function cli(args: string[]): string {
+	return execFileSync('npx', ['@wordpress/env', 'run', 'cli', 'wp', ...args], { encoding: 'utf8' }).trim();
+}
+
+let available = true;
+
+test.beforeAll(() => {
+	try {
+		cli(['plugin', 'install', 'woocommerce', '--activate']);
+		// The tab lives behind the licence, like every other paid feature.
+		cli(['option', 'update', 'easy2fa_license',
+			'{"key":"DEV-TEST-KEY","status":"active","expires_at":0,"checked_at":0}', '--format=json']);
+		cli(['rewrite', 'flush', '--hard']);
+	} catch {
+		available = false;
+	}
+});
+
+test.afterAll(() => {
+	try {
+		cli(['option', 'delete', 'easy2fa_license']);
+	} catch {
+		// nothing to undo
+	}
+});
+
+test.beforeEach(() => resetTwoFactor());
+
+// This tab has broken twice in ways only a real page load showed: once because
+// the WooCommerce check ran while plugins were still loading, and once because
+// the endpoint claimed the site root and a page shadowed it.
+test('the account area gets a two-factor tab that actually resolves', async ({ page }) => {
+	test.skip(!available, 'WooCommerce could not be installed');
+
+	await login(page);
+	await page.goto('/my-account/');
+
+	const nav = page.locator('.woocommerce-MyAccount-navigation');
+	await expect(nav).toContainText(/two-factor/i);
+
+	// Before Log out, which belongs last.
+	const items = await nav.locator('a').allInnerTexts();
+	const labels = items.map((t) => t.trim().toLowerCase());
+	expect(labels.indexOf('two-factor')).toBeLessThan(labels.indexOf('log out'));
+
+	await page.goto('/my-account/two-factor/');
+	expect(page.url()).toContain('/my-account/two-factor');
+	await expect(page.locator('.sigil-enrol--frontend')).toBeVisible();
+	await expect(page.locator('link[href*="frontend.css"]')).toHaveCount(1);
+});
+
+test('a customer can enrol from the account tab', async ({ page }) => {
+	test.skip(!available, 'WooCommerce could not be installed');
+
+	await login(page);
+	await page.goto('/my-account/two-factor/');
+	await page.locator('.sigil-enrol__tab', { hasText: /backup codes/i }).first().click();
+
+	await page.locator('.sigil-enrol--frontend button[type="submit"], .sigil-enrol--frontend input[type="submit"]')
+		.filter({ hasText: /generate|enrol|enable|save/i }).first().click();
+
+	await expect(page.locator('.sigil-enrol--frontend')).toContainText(/backup code/i);
+	expect(page.url()).toContain('/my-account/');
+});
