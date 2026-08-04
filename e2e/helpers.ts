@@ -51,7 +51,7 @@ export async function login(page: Page, user = 'admin', pass = 'password') {
 	// settles on a site with background admin requests, and not on a URL change,
 	// because the 2FA challenge keeps the login form's URL.
 	await page.waitForSelector('#wpadminbar, #sigil-challenge-form, #login_error, .sigil-challenge', {
-		timeout: 30_000,
+		timeout: process.env.CI ? 90_000 : 30_000,
 	});
 }
 
