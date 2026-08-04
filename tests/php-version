@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# wp-env's `run` passes its argument as one exec token, so a version probe needs
+# to be a single word. CI uses this to prove the container is the PHP it asked
+# for, since a matrix that silently runs one version everywhere proves nothing.
+exec php -r 'echo PHP_MAJOR_VERSION . "." . PHP_MINOR_VERSION;'

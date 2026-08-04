@@ -187,6 +187,10 @@ class Test_REST extends WP_UnitTestCase {
 	// Each mint occupies a slot in the user's open passkey challenges, so simply
 	// describing the login must not evict the challenge a waiting tab holds.
 	public function test_describing_a_login_does_not_mint_passkey_options_unasked(): void {
+		if ( PHP_VERSION_ID < 80000 ) {
+			$this->markTestSkipped( 'passkeys need PHP 8.0, so they cannot be the active method here' );
+		}
+
 		$user = self::factory()->user->create_and_get();
 		\Sigil\Store::set_method( $user->ID, 'totp', array( 'secret' => 'x' ) );
 		\Sigil\Store::set_method( $user->ID, 'passkey', array( 'enrolled_at' => 1 ) );

@@ -1,0 +1,134 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit:
+    name: Unit (PHP ${{ matrix.php }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 7.4 is the floor the plugin header claims. Passkeys are gated to 8.0+,
+        # so the older runs are what prove the rest still works without them.
+        php: ['7.4', '8.0', '8.2', '8.3']
+    env:
+      WP_ENV_PHP_VERSION: ${{ matrix.php }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          composer install --no-interaction --no-progress
+
+      - name: Start WordPress
+        run: npx @wordpress/env start
+
+      - name: Confirm the runtime is the one under test
+        run: |
+          reported=$(npx @wordpress/env run tests-cli --env-cwd=wp-content/plugins/sigil-2fa "tests/php-version" 2>/dev/null | tr -d '\r' | tail -1)
+          echo "container reports PHP $reported, matrix asked for ${{ matrix.php }}"
+          case "$reported" in
+            *"${{ matrix.php }}"*) ;;
+            *) echo "::error::wp-env ignored WP_ENV_PHP_VERSION; this run would not have tested ${{ matrix.php }}"; exit 1 ;;
+          esac
+
+      - name: Single site
+        run: npx @wordpress/env run tests-cli --env-cwd=wp-content/plugins/sigil-2fa "vendor/bin/phpunit"
+
+      - name: Network
+        run: npx @wordpress/env run tests-cli --env-cwd=wp-content/plugins/sigil-2fa "tests/multisite"
+
+  e2e:
+    name: End to end
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          composer install --no-interaction --no-progress
+          npx playwright install --with-deps chromium
+
+      - name: Start WordPress
+        run: npx @wordpress/env start
+
+      - name: Run
+        run: npx playwright test
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+  package:
+    name: Plugin Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build the package
+        run: bash build/build-free.sh
+
+      - name: Start WordPress
+        run: npx @wordpress/env start
+
+      - name: Install Plugin Check
+        run: npx @wordpress/env run cli wp plugin install plugin-check --activate
+
+      - name: Check the built package, not the working tree
+        run: |
+          set -eu
+          container=$(docker ps --filter "name=wordpress-1" --format "{{.Names}}" | grep -v tests | head -1)
+          docker cp dist/sigil-2fa "$container":/var/www/html/wp-content/plugins/sigil-2fa-pkg
+
+          # A checker that silently is not running looks exactly like a clean
+          # plugin, so prove it bites before believing a pass.
+          docker exec "$container" sh -c 'printf "<?php\necho \$_GET[\"x\"];\n" > /var/www/html/wp-content/plugins/sigil-2fa-pkg/canary.php'
+          if ! npx @wordpress/env run cli wp plugin check sigil-2fa-pkg --format=csv 2>/dev/null | grep -q "canary.php"; then
+            echo "::error::Plugin Check did not flag the planted file; the check is not running"
+            exit 1
+          fi
+          docker exec "$container" rm /var/www/html/wp-content/plugins/sigil-2fa-pkg/canary.php
+
+          npx @wordpress/env run cli wp plugin check sigil-2fa-pkg --format=csv 2>/dev/null > result.csv
+
+          # The copy is checked under a different folder name than its text
+          # domain, so textdomain findings are an artifact of that and nothing
+          # else is tolerated.
+          real=$(grep -E ",(ERROR|WARNING)," result.csv | grep -viE "textdomain" || true)
+          if [ -n "$real" ]; then
+            echo "::error::Plugin Check findings on the built package"
+            echo "$real"
+            exit 1
+          fi
+          echo "Plugin Check clean on the built package"
