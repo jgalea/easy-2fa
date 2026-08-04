@@ -26,9 +26,9 @@ class Test_Pro_Features extends WP_UnitTestCase {
 	}
 
 	public function tear_down(): void {
-		delete_option( \Easy2FA\Pro\Destinations::OPTION );
-		delete_option( \Easy2FA\Pro\Method_Policy::OPTION );
-		delete_option( \Easy2FA\Pro\Branding::OPTION );
+		delete_option( \Sigil\Pro\Destinations::OPTION );
+		delete_option( \Sigil\Pro\Method_Policy::OPTION );
+		delete_option( \Sigil\Pro\Branding::OPTION );
 		// Deliberately not remove_all_filters(): these are added by singletons that
 		// will never re-add them, so stripping one here breaks whatever test runs
 		// next. Every one of them no-ops once its option is gone, which is the
@@ -37,22 +37,22 @@ class Test_Pro_Features extends WP_UnitTestCase {
 	}
 
 	public function test_a_disallowed_method_is_refused_for_that_role(): void {
-		\Easy2FA\Pro\Method_Policy::update(
+		\Sigil\Pro\Method_Policy::update(
 			array( 'subscriber' => array( 'email' => false, 'totp' => true ) )
 		);
 
 		$subscriber = self::factory()->user->create( array( 'role' => 'subscriber' ) );
 		$editor     = self::factory()->user->create( array( 'role' => 'editor' ) );
 
-		$this->assertFalse( \Easy2FA\Pro\Method_Policy::allowed_for( $subscriber, 'email' ) );
-		$this->assertTrue( \Easy2FA\Pro\Method_Policy::allowed_for( $subscriber, 'totp' ) );
-		$this->assertTrue( \Easy2FA\Pro\Method_Policy::allowed_for( $editor, 'email' ), 'a role with no rule keeps everything' );
+		$this->assertFalse( \Sigil\Pro\Method_Policy::allowed_for( $subscriber, 'email' ) );
+		$this->assertTrue( \Sigil\Pro\Method_Policy::allowed_for( $subscriber, 'totp' ) );
+		$this->assertTrue( \Sigil\Pro\Method_Policy::allowed_for( $editor, 'email' ), 'a role with no rule keeps everything' );
 	}
 
 	// Holding two roles must widen what someone may use, never narrow it, or
 	// adding a role would quietly take a method away.
 	public function test_the_more_permissive_role_wins(): void {
-		\Easy2FA\Pro\Method_Policy::update(
+		\Sigil\Pro\Method_Policy::update(
 			array(
 				'subscriber' => array( 'email' => false ),
 				'editor'     => array( 'email' => true ),
@@ -62,16 +62,16 @@ class Test_Pro_Features extends WP_UnitTestCase {
 		$user = self::factory()->user->create( array( 'role' => 'subscriber' ) );
 		get_user_by( 'id', $user )->add_role( 'editor' );
 
-		$this->assertTrue( \Easy2FA\Pro\Method_Policy::allowed_for( $user, 'email' ) );
+		$this->assertTrue( \Sigil\Pro\Method_Policy::allowed_for( $user, 'email' ) );
 	}
 
 	public function test_the_registry_drops_a_disallowed_method(): void {
-		\Easy2FA\Pro\Method_Policy::update(
+		\Sigil\Pro\Method_Policy::update(
 			array( 'subscriber' => array( 'email' => false, 'totp' => true, 'backup' => true, 'passkey' => true ) )
 		);
 
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'subscriber' ) ) );
-		\Easy2FA\Pro\Method_Policy::instance()->register();
+		\Sigil\Pro\Method_Policy::instance()->register();
 
 		$ids = array_map(
 			static function ( \Sigil\Provider $provider ): string {
@@ -86,18 +86,18 @@ class Test_Pro_Features extends WP_UnitTestCase {
 	// A policy that allows nothing would leave an account unable to authenticate
 	// at all, so it is treated as a misconfiguration rather than obeyed.
 	public function test_a_policy_that_allows_nothing_is_ignored(): void {
-		\Easy2FA\Pro\Method_Policy::update(
+		\Sigil\Pro\Method_Policy::update(
 			array( 'subscriber' => array( 'email' => false, 'totp' => false, 'backup' => false, 'passkey' => false ) )
 		);
 
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'subscriber' ) ) );
-		\Easy2FA\Pro\Method_Policy::instance()->register();
+		\Sigil\Pro\Method_Policy::instance()->register();
 
 		$this->assertNotEmpty( \Sigil\Providers::instance()->all() );
 	}
 
 	public function test_a_custom_email_replaces_the_default(): void {
-		\Easy2FA\Pro\Branding::update(
+		\Sigil\Pro\Branding::update(
 			array(
 				'subject'   => 'Your {{site}} code',
 				'body'      => 'Hello {{user}}, your code is {{code}}.',
@@ -105,7 +105,7 @@ class Test_Pro_Features extends WP_UnitTestCase {
 				'from_name' => 'Example Security',
 			)
 		);
-		\Easy2FA\Pro\Branding::instance()->register();
+		\Sigil\Pro\Branding::instance()->register();
 
 		$user = self::factory()->user->create_and_get( array( 'display_name' => 'Ada' ) );
 
@@ -120,8 +120,8 @@ class Test_Pro_Features extends WP_UnitTestCase {
 
 	// A template that lost its placeholder would mail a code-less code email.
 	public function test_a_template_without_the_code_falls_back(): void {
-		\Easy2FA\Pro\Branding::update( array( 'body' => 'Hello, please sign in.' ) );
-		\Easy2FA\Pro\Branding::instance()->register();
+		\Sigil\Pro\Branding::update( array( 'body' => 'Hello, please sign in.' ) );
+		\Sigil\Pro\Branding::instance()->register();
 
 		$user = self::factory()->user->create_and_get();
 
@@ -133,9 +133,9 @@ class Test_Pro_Features extends WP_UnitTestCase {
 
 	public function test_export_carries_settings_and_no_secrets(): void {
 		\Sigil\Policy::update( array( 'enabled' => true, 'grace_days' => 4 ) );
-		\Easy2FA\Pro\Method_Policy::update( array( 'editor' => array( 'email' => false ) ) );
+		\Sigil\Pro\Method_Policy::update( array( 'editor' => array( 'email' => false ) ) );
 
-		$payload = \Easy2FA\Pro\Portability::export();
+		$payload = \Sigil\Pro\Portability::export();
 		$json    = wp_json_encode( $payload );
 
 		$this->assertSame( 'sigil-2fa', $payload['plugin'] );
@@ -160,16 +160,16 @@ class Test_Pro_Features extends WP_UnitTestCase {
 			)
 		);
 
-		$this->assertTrue( \Easy2FA\Pro\Portability::import( (string) $json ) );
+		$this->assertTrue( \Sigil\Pro\Portability::import( (string) $json ) );
 		$this->assertSame( 9, \Sigil\Policy::get()['grace_days'] );
-		$this->assertFalse( \Easy2FA\Pro\Method_Policy::get()['author']['email'] );
-		$this->assertSame( 'Imported subject', \Easy2FA\Pro\Branding::get()['subject'] );
+		$this->assertFalse( \Sigil\Pro\Method_Policy::get()['author']['email'] );
+		$this->assertSame( 'Imported subject', \Sigil\Pro\Branding::get()['subject'] );
 	}
 
 	public function test_import_refuses_a_foreign_or_unreadable_file(): void {
-		$this->assertWPError( \Easy2FA\Pro\Portability::import( 'not json' ) );
-		$this->assertWPError( \Easy2FA\Pro\Portability::import( '{"plugin":"something-else","format":1}' ) );
-		$this->assertWPError( \Easy2FA\Pro\Portability::import( '{"plugin":"sigil-2fa","format":99}' ) );
+		$this->assertWPError( \Sigil\Pro\Portability::import( 'not json' ) );
+		$this->assertWPError( \Sigil\Pro\Portability::import( '{"plugin":"something-else","format":1}' ) );
+		$this->assertWPError( \Sigil\Pro\Portability::import( '{"plugin":"sigil-2fa","format":99}' ) );
 	}
 
 	/**
@@ -181,7 +181,7 @@ class Test_Pro_Features extends WP_UnitTestCase {
 	private function reset_errors( int $user_id, array $post ): \WP_Error {
 		$_POST  = $post;
 		$errors = new \WP_Error();
-		\Easy2FA\Pro\Password_Reset::instance()->validate( $errors, get_user_by( 'id', $user_id ) );
+		\Sigil\Pro\Password_Reset::instance()->validate( $errors, get_user_by( 'id', $user_id ) );
 		$_POST  = array();
 
 		return $errors;
@@ -196,7 +196,7 @@ class Test_Pro_Features extends WP_UnitTestCase {
 		);
 
 		$errors = $this->reset_errors( $user, array( 'pass1' => 'a-new-password' ) );
-		$this->assertContains( 'easy2fa_reset_code_missing', $errors->get_error_codes() );
+		$this->assertContains( 'sigil_pro_reset_code_missing', $errors->get_error_codes() );
 	}
 
 	public function test_a_wrong_code_is_refused(): void {
@@ -207,8 +207,8 @@ class Test_Pro_Features extends WP_UnitTestCase {
 			array( 'secret' => self::SECRET, 'code' => \Sigil\Providers\Totp::code_at( self::SECRET, time() - 30 ) )
 		);
 
-		$errors = $this->reset_errors( $user, array( 'pass1' => 'a-new-password', 'easy2fa_reset_code' => '000000' ) );
-		$this->assertContains( 'easy2fa_reset_code_invalid', $errors->get_error_codes() );
+		$errors = $this->reset_errors( $user, array( 'pass1' => 'a-new-password', 'sigil_pro_reset_code' => '000000' ) );
+		$this->assertContains( 'sigil_pro_reset_code_invalid', $errors->get_error_codes() );
 
 		\Sigil\Rate_Limit::clear( 'reset:u:' . $user );
 	}
@@ -220,7 +220,7 @@ class Test_Pro_Features extends WP_UnitTestCase {
 
 		$errors = $this->reset_errors(
 			$user,
-			array( 'pass1' => 'a-new-password', 'easy2fa_reset_code' => \Sigil\Providers\Totp::code_at( self::SECRET, time() ) )
+			array( 'pass1' => 'a-new-password', 'sigil_pro_reset_code' => \Sigil\Providers\Totp::code_at( self::SECRET, time() ) )
 		);
 
 		$this->assertSame( array(), $errors->get_error_codes() );
@@ -235,7 +235,7 @@ class Test_Pro_Features extends WP_UnitTestCase {
 
 		$errors = $this->reset_errors(
 			$user,
-			array( 'pass1' => 'a-new-password', 'easy2fa_reset_code' => $codes[0] )
+			array( 'pass1' => 'a-new-password', 'sigil_pro_reset_code' => $codes[0] )
 		);
 
 		$this->assertSame( array(), $errors->get_error_codes() );
@@ -274,8 +274,8 @@ class Test_Pro_Features extends WP_UnitTestCase {
 	}
 
 	public function test_setup_sends_the_user_on_once_they_hold_a_factor(): void {
-		\Easy2FA\Pro\Destinations::update( home_url( '/members/' ) );
-		\Easy2FA\Pro\Destinations::instance()->register();
+		\Sigil\Pro\Destinations::update( home_url( '/members/' ) );
+		\Sigil\Pro\Destinations::instance()->register();
 
 		$this->assertSame(
 			home_url( '/members/' ),
@@ -285,8 +285,8 @@ class Test_Pro_Features extends WP_UnitTestCase {
 
 	// Part-way through, the setup screen is still where they need to be.
 	public function test_setup_does_not_redirect_before_anything_is_enrolled(): void {
-		\Easy2FA\Pro\Destinations::update( home_url( '/members/' ) );
-		\Easy2FA\Pro\Destinations::instance()->register();
+		\Sigil\Pro\Destinations::update( home_url( '/members/' ) );
+		\Sigil\Pro\Destinations::instance()->register();
 
 		$bare = self::factory()->user->create();
 
@@ -299,8 +299,8 @@ class Test_Pro_Features extends WP_UnitTestCase {
 	// Backup codes are shown once and never again, so that screen is the one
 	// place nobody should be sent away from.
 	public function test_setup_never_redirects_off_the_backup_code_display(): void {
-		\Easy2FA\Pro\Destinations::update( home_url( '/members/' ) );
-		\Easy2FA\Pro\Destinations::instance()->register();
+		\Sigil\Pro\Destinations::update( home_url( '/members/' ) );
+		\Sigil\Pro\Destinations::instance()->register();
 
 		$this->assertSame(
 			'https://example.org/back',
@@ -309,8 +309,8 @@ class Test_Pro_Features extends WP_UnitTestCase {
 	}
 
 	public function test_setup_leaves_removals_and_failures_alone(): void {
-		\Easy2FA\Pro\Destinations::update( home_url( '/members/' ) );
-		\Easy2FA\Pro\Destinations::instance()->register();
+		\Sigil\Pro\Destinations::update( home_url( '/members/' ) );
+		\Sigil\Pro\Destinations::instance()->register();
 		$user = $this->enrolled_user();
 
 		$this->assertSame( 'https://example.org/back', apply_filters( 'sigil_enrol_redirect', 'https://example.org/back', $user, 'success', 'removed', 'totp' ) );
@@ -324,7 +324,7 @@ class Test_Pro_Features extends WP_UnitTestCase {
 		$json = wp_json_encode(
 			array( 'format' => 1, 'plugin' => 'sigil-2fa', 'policy' => array( 'enabled' => false, 'grace_days' => 2 ) )
 		);
-		\Easy2FA\Pro\Portability::import( (string) $json );
+		\Sigil\Pro\Portability::import( (string) $json );
 
 		$this->assertTrue( \Sigil\Policy::get()['enabled'] );
 		$this->assertSame( 2, \Sigil\Policy::get()['grace_days'] );

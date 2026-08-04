@@ -23,8 +23,8 @@ class Test_Pro_Coverage extends WP_UnitTestCase {
 	}
 
 	public function tear_down(): void {
-		delete_option( \Easy2FA\Pro\Zero_Setup::OPTION );
-		delete_option( \Easy2FA\Pro\Branding::OPTION );
+		delete_option( \Sigil\Pro\Zero_Setup::OPTION );
+		delete_option( \Sigil\Pro\Branding::OPTION );
 		\Sigil\Network::delete_option( \Sigil\Policy::OPTION_KEY );
 		// Deliberately not remove_all_filters(): these are added by singletons that
 		// will never re-add them, so stripping one here breaks whatever test runs
@@ -51,8 +51,8 @@ class Test_Pro_Coverage extends WP_UnitTestCase {
 
 		$this->assertFalse( \Sigil\Providers::instance()->has_usable( $user ), 'nothing is set up' );
 
-		\Easy2FA\Pro\Zero_Setup::set_enabled( true );
-		\Easy2FA\Pro\Zero_Setup::instance()->register();
+		\Sigil\Pro\Zero_Setup::set_enabled( true );
+		\Sigil\Pro\Zero_Setup::instance()->register();
 
 		$this->assertTrue( \Sigil\Providers::instance()->has_usable( $user ) );
 		$this->assertFalse( \Sigil\Policy::must_enrol_now( $user ), 'and is therefore not pushed at a wall' );
@@ -64,8 +64,8 @@ class Test_Pro_Coverage extends WP_UnitTestCase {
 		$user = self::factory()->user->create();
 		\Sigil\Store::set_method( $user, 'totp', array( 'secret' => 'x' ) );
 
-		\Easy2FA\Pro\Zero_Setup::set_enabled( true );
-		\Easy2FA\Pro\Zero_Setup::instance()->register();
+		\Sigil\Pro\Zero_Setup::set_enabled( true );
+		\Sigil\Pro\Zero_Setup::instance()->register();
 
 		$preferred = \Sigil\Providers::instance()->preferred_for( $user );
 		$this->assertInstanceOf( \Sigil\Provider::class, $preferred );
@@ -78,15 +78,15 @@ class Test_Pro_Coverage extends WP_UnitTestCase {
 		$user = self::factory()->user->create();
 		wp_update_user( array( 'ID' => $user, 'user_email' => '' ) );
 
-		\Easy2FA\Pro\Zero_Setup::set_enabled( true );
-		\Easy2FA\Pro\Zero_Setup::instance()->register();
+		\Sigil\Pro\Zero_Setup::set_enabled( true );
+		\Sigil\Pro\Zero_Setup::instance()->register();
 
 		$this->assertFalse( \Sigil\Providers::instance()->has_usable( $user ) );
 	}
 
 	public function test_zero_setup_does_nothing_while_it_is_off(): void {
 		$user = self::factory()->user->create();
-		\Easy2FA\Pro\Zero_Setup::instance()->register();
+		\Sigil\Pro\Zero_Setup::instance()->register();
 
 		$this->assertFalse( \Sigil\Providers::instance()->has_usable( $user ) );
 	}
@@ -103,8 +103,8 @@ class Test_Pro_Coverage extends WP_UnitTestCase {
 		$actor = $this->manager();
 		$user  = self::factory()->user->create_and_get();
 
-		$this->assertTrue( \Easy2FA\Pro\Bypass::grant_for( (int) $user->ID, $actor ) );
-		\Easy2FA\Pro\Bypass::instance()->register();
+		$this->assertTrue( \Sigil\Pro\Bypass::grant_for( (int) $user->ID, $actor ) );
+		\Sigil\Pro\Bypass::instance()->register();
 
 		$this->assertTrue( (bool) apply_filters( 'sigil_skip_challenge', false, $user ), 'the excused sign-in goes through' );
 		$this->assertFalse( (bool) apply_filters( 'sigil_skip_challenge', false, $user ), 'and the next one does not' );
@@ -115,33 +115,33 @@ class Test_Pro_Coverage extends WP_UnitTestCase {
 	public function test_nobody_can_excuse_their_own_sign_in(): void {
 		$actor = $this->manager();
 
-		$this->assertFalse( \Easy2FA\Pro\Bypass::can_grant( $actor, $actor ) );
-		$this->assertFalse( \Easy2FA\Pro\Bypass::grant_for( $actor, $actor ) );
+		$this->assertFalse( \Sigil\Pro\Bypass::can_grant( $actor, $actor ) );
+		$this->assertFalse( \Sigil\Pro\Bypass::grant_for( $actor, $actor ) );
 	}
 
 	public function test_someone_without_the_capability_cannot_excuse_anyone(): void {
 		$editor = self::factory()->user->create( array( 'role' => 'editor' ) );
 		$user   = self::factory()->user->create();
 
-		$this->assertFalse( \Easy2FA\Pro\Bypass::grant_for( $user, $editor ) );
-		$this->assertFalse( \Easy2FA\Pro\Bypass::has_grant( $user ) );
+		$this->assertFalse( \Sigil\Pro\Bypass::grant_for( $user, $editor ) );
+		$this->assertFalse( \Sigil\Pro\Bypass::has_grant( $user ) );
 	}
 
 	public function test_an_excused_sign_in_expires_on_its_own(): void {
 		$actor = $this->manager();
 		$user  = self::factory()->user->create_and_get();
 
-		\Easy2FA\Pro\Bypass::grant_for( (int) $user->ID, $actor );
-		update_user_meta( (int) $user->ID, '_easy2fa_bypass', array( 'expires' => time() - 1, 'actor' => $actor ) );
+		\Sigil\Pro\Bypass::grant_for( (int) $user->ID, $actor );
+		update_user_meta( (int) $user->ID, '_sigil_pro_bypass', array( 'expires' => time() - 1, 'actor' => $actor ) );
 
-		$this->assertFalse( \Easy2FA\Pro\Bypass::has_grant( (int) $user->ID ) );
+		$this->assertFalse( \Sigil\Pro\Bypass::has_grant( (int) $user->ID ) );
 	}
 
 	public function test_excusing_a_sign_in_is_written_to_the_audit_log(): void {
 		$actor = $this->manager();
 		$user  = self::factory()->user->create();
 
-		\Easy2FA\Pro\Bypass::grant_for( $user, $actor );
+		\Sigil\Pro\Bypass::grant_for( $user, $actor );
 
 		$log = get_user_meta( $user, '_sigil_reset_log', true );
 		$this->assertIsArray( $log );
@@ -157,9 +157,9 @@ class Test_Pro_Coverage extends WP_UnitTestCase {
 		\Sigil\Store::set_method( $user, 'totp', array( 'secret' => 'x' ) );
 
 		\Sigil\Recovery::reset_user( $user, $actor );
-		\Easy2FA\Pro\Bypass::grant_for( $user, $actor );
+		\Sigil\Pro\Bypass::grant_for( $user, $actor );
 
-		$entries = \Easy2FA\Pro\Audit::entries( $user );
+		$entries = \Sigil\Pro\Audit::entries( $user );
 
 		$this->assertCount( 2, $entries, 'one reset and one excused sign-in' );
 		$this->assertSame( 'bypass', $entries[0]['action'] );
@@ -172,19 +172,19 @@ class Test_Pro_Coverage extends WP_UnitTestCase {
 		$user = self::factory()->user->create();
 		update_user_meta( $user, '_sigil_reset_log', array( array( 'actor' => 3, 'time' => time() ) ) );
 
-		$entries = \Easy2FA\Pro\Audit::entries( $user );
+		$entries = \Sigil\Pro\Audit::entries( $user );
 
 		$this->assertCount( 1, $entries );
 		$this->assertSame( 'reset', $entries[0]['action'] );
 	}
 
 	public function test_an_account_with_no_history_has_nothing_to_show(): void {
-		$this->assertSame( array(), \Easy2FA\Pro\Audit::entries( self::factory()->user->create() ) );
+		$this->assertSame( array(), \Sigil\Pro\Audit::entries( self::factory()->user->create() ) );
 	}
 
 	public function test_the_challenge_screen_takes_the_site_wording(): void {
-		\Easy2FA\Pro\Branding::update( array( 'title' => 'Confirm it is you', 'intro' => 'Signing in as %s, nearly there.' ) );
-		\Easy2FA\Pro\Branding::instance()->register();
+		\Sigil\Pro\Branding::update( array( 'title' => 'Confirm it is you', 'intro' => 'Signing in as %s, nearly there.' ) );
+		\Sigil\Pro\Branding::instance()->register();
 
 		$text = apply_filters(
 			'sigil_challenge_text',
@@ -197,9 +197,9 @@ class Test_Pro_Coverage extends WP_UnitTestCase {
 	}
 
 	public function test_a_closing_style_tag_cannot_escape_the_stylesheet(): void {
-		\Easy2FA\Pro\Branding::update( array( 'css' => 'body{color:red}</style><script>alert(1)</script>' ) );
+		\Sigil\Pro\Branding::update( array( 'css' => 'body{color:red}</style><script>alert(1)</script>' ) );
 
-		$stored = \Easy2FA\Pro\Branding::get()['css'];
+		$stored = \Sigil\Pro\Branding::get()['css'];
 		$this->assertStringNotContainsString( '</style>', $stored );
 		$this->assertStringNotContainsString( '<script', $stored );
 	}

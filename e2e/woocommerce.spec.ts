@@ -48,7 +48,7 @@ test.beforeAll(() => {
 		cli(['option', 'update', 'woocommerce_onboarding_profile', '{"completed":true,"skipped":true}', '--format=json']);
 
 		// The tab lives behind the licence, like every other paid feature.
-		cli(['option', 'update', 'easy2fa_license',
+		cli(['option', 'update', 'sigil_pro_license',
 			'{"key":"DEV-TEST-KEY","status":"active","expires_at":0,"checked_at":0}', '--format=json']);
 		cli(['rewrite', 'flush', '--hard']);
 
@@ -64,7 +64,7 @@ test.beforeAll(() => {
 
 test.afterAll(() => {
 	try {
-		cli(['option', 'delete', 'easy2fa_license']);
+		cli(['option', 'delete', 'sigil_pro_license']);
 	} catch {
 		// nothing to undo
 	}

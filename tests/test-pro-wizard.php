@@ -22,7 +22,7 @@ class Test_Pro_Wizard extends WP_UnitTestCase {
 	}
 
 	public function tear_down(): void {
-		delete_option( \Easy2FA\Pro\Wizard::OPTION );
+		delete_option( \Sigil\Pro\Wizard::OPTION );
 		\Sigil\Network::delete_option( \Sigil\Policy::OPTION_KEY );
 		parent::tear_down();
 	}
@@ -38,7 +38,7 @@ class Test_Pro_Wizard extends WP_UnitTestCase {
 	public function test_it_starts_by_asking_you_to_protect_yourself(): void {
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
 
-		$state = \Easy2FA\Pro\Wizard::state();
+		$state = \Sigil\Pro\Wizard::state();
 		$this->assertSame( 1, $state['step'] );
 		$this->assertFalse( $state['enrolled'] );
 	}
@@ -48,7 +48,7 @@ class Test_Pro_Wizard extends WP_UnitTestCase {
 		wp_set_current_user( $admin );
 		$this->enrol( $admin );
 
-		$state = \Easy2FA\Pro\Wizard::state();
+		$state = \Sigil\Pro\Wizard::state();
 		$this->assertTrue( $state['enrolled'] );
 		$this->assertSame( 2, $state['step'] );
 	}
@@ -61,8 +61,8 @@ class Test_Pro_Wizard extends WP_UnitTestCase {
 
 		\Sigil\Policy::update( array( 'enabled' => true, 'roles' => array( 'administrator' => false ) ) );
 
-		$this->assertFalse( \Easy2FA\Pro\Wizard::state()['policy_set'] );
-		$this->assertSame( 2, \Easy2FA\Pro\Wizard::state()['step'] );
+		$this->assertFalse( \Sigil\Pro\Wizard::state()['policy_set'] );
+		$this->assertSame( 2, \Sigil\Pro\Wizard::state()['step'] );
 	}
 
 	public function test_it_reaches_the_last_step_once_a_policy_is_real(): void {
@@ -72,14 +72,14 @@ class Test_Pro_Wizard extends WP_UnitTestCase {
 
 		\Sigil\Policy::update( array( 'enabled' => true, 'roles' => array( 'administrator' => true ) ) );
 
-		$state = \Easy2FA\Pro\Wizard::state();
+		$state = \Sigil\Pro\Wizard::state();
 		$this->assertTrue( $state['policy_set'] );
 		$this->assertSame( 3, $state['step'] );
 	}
 
 	public function test_the_prompt_stops_once_it_is_dismissed(): void {
-		$this->assertFalse( \Easy2FA\Pro\Wizard::is_done() );
-		update_option( \Easy2FA\Pro\Wizard::OPTION, true, false );
-		$this->assertTrue( \Easy2FA\Pro\Wizard::is_done() );
+		$this->assertFalse( \Sigil\Pro\Wizard::is_done() );
+		update_option( \Sigil\Pro\Wizard::OPTION, true, false );
+		$this->assertTrue( \Sigil\Pro\Wizard::is_done() );
 	}
 }
