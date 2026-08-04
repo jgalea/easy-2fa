@@ -4,7 +4,7 @@ Tags: two-factor, 2fa, passkeys, authentication, security
 Requires at least: 6.9
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 0.2.0
+Stable tag: 0.2.1
 License: GPL-3.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -101,6 +101,11 @@ Yes. Put `[sigil_2fa]` on a page. Users manage their methods from there, and any
 Yes. Settings → Sigil lets you pick exactly which roles are required, and set a grace period so people are prompted to enrol rather than locked out immediately.
 
 == Changelog ==
+
+= 0.2.1 =
+* Multisite: when an upgrade merges per-site passkey tables, the highest signature counter for each credential is kept. Where the same authenticator was registered on two sites, the lower one could otherwise win and the clone check would have less to work with.
+* Adds extension points so an add-on can rewrite the login code email, change where enrolment sends people afterwards, and load the front-end styles outside the shortcode. Nothing in the plugin behaves differently on its own.
+* Nothing user-facing changed. Existing installs need do nothing.
 
 = 0.2.0 =
 * Authenticator setup now shows a scannable QR code. It is drawn in the browser by a bundled MIT-licensed library, so the provisioning secret is never sent anywhere.
