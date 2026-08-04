@@ -1,6 +1,12 @@
 import { test, expect } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { resetTwoFactor, login } from './helpers';
+
+// The account tab belongs to the paid add-on, which lives in its own repository
+// and is absent from a checkout of this one. Without this the specs fail on CI
+// for the honest reason that there is nothing there to test.
+const proInstalled = existsSync('pro/loader.php');
 
 function cli(args: string[]): string {
 	return execFileSync('npx', ['@wordpress/env', 'run', 'cli', 'wp', ...args], { encoding: 'utf8' }).trim();
@@ -9,6 +15,11 @@ function cli(args: string[]): string {
 let available = true;
 
 test.beforeAll(() => {
+	if (!proInstalled) {
+		available = false;
+		return;
+	}
+
 	try {
 		cli(['plugin', 'install', 'woocommerce', '--activate']);
 
@@ -45,6 +56,7 @@ test.beforeEach(() => resetTwoFactor());
 // the WooCommerce check ran while plugins were still loading, and once because
 // the endpoint claimed the site root and a page shadowed it.
 test('the account area gets a two-factor tab that actually resolves', async ({ page }) => {
+	test.skip(!proInstalled, 'the paid add-on is not present in this checkout');
 	test.skip(!available, 'WooCommerce could not be installed');
 
 	await login(page);
@@ -65,6 +77,7 @@ test('the account area gets a two-factor tab that actually resolves', async ({ p
 });
 
 test('a customer can enrol from the account tab', async ({ page }) => {
+	test.skip(!proInstalled, 'the paid add-on is not present in this checkout');
 	test.skip(!available, 'WooCommerce could not be installed');
 
 	await login(page);
