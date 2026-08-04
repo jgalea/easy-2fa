@@ -52,7 +52,7 @@ final class CLI {
 			\WP_CLI::error( 'User not found.' );
 		}
 
-		$result = Recovery::reset_user( (int) $user->ID, 0 );
+		$result = Recovery::reset_as_system( (int) $user->ID );
 		if ( is_wp_error( $result ) ) {
 			\WP_CLI::error( $result->get_error_message() );
 		}

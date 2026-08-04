@@ -46,6 +46,24 @@ class Test_Recovery extends WP_UnitTestCase {
 		$this->assertSame( [], \Sigil\Credentials::for_user( $user ) );
 	}
 
+	// Actor 0 is nobody. The unattended path has its own named entry point, so
+	// passing a logged-out user id here must never read as an exemption.
+	public function test_actor_zero_is_refused(): void {
+		$user = self::factory()->user->create();
+		\Sigil\Store::set_method( $user, 'totp', [ 'secret' => 'x' ] );
+
+		$this->assertWPError( \Sigil\Recovery::reset_user( $user, 0 ) );
+		$this->assertTrue( \Sigil\Store::has_any( $user ) );
+	}
+
+	public function test_system_reset_bypasses_capabilities_deliberately(): void {
+		$user = self::factory()->user->create();
+		\Sigil\Store::set_method( $user, 'totp', [ 'secret' => 'x' ] );
+
+		$this->assertTrue( \Sigil\Recovery::reset_as_system( $user ) );
+		$this->assertFalse( \Sigil\Store::has_any( $user ) );
+	}
+
 	public function test_reset_is_logged(): void {
 		$admin = $this->user_manager();
 		$user  = self::factory()->user->create();

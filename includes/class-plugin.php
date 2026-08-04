@@ -55,6 +55,9 @@ final class Plugin {
 		require_once SIGIL_DIR . 'includes/class-enforcement.php';
 		Enforcement::instance();
 
+		require_once SIGIL_DIR . 'includes/class-rest.php';
+		REST::instance();
+
 		// Pro add-on, when present. The free build strips pro/ entirely, so this
 		// include only fires in the Pro distribution.
 		if ( SIGIL_PRO ) {

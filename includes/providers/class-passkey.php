@@ -206,10 +206,11 @@ final class Passkey implements Provider {
 
 	/**
 	 * Build the WebAuthn assertion options and store the matching challenge.
+	 * Public so a headless client can fetch what the rendered screen embeds.
 	 *
 	 * @return \stdClass|null Null when the account has no passkeys or the library fails.
 	 */
-	private function auth_options( int $user_id ): ?\stdClass {
+	public function auth_options( int $user_id ): ?\stdClass {
 		$ids = [];
 		foreach ( Credentials::for_user( $user_id ) as $row ) {
 			$ids[] = $row->credential_id;

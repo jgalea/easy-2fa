@@ -26,13 +26,43 @@ final class Recovery {
 	}
 
 	/**
-	 * Wipe every 2FA method for a user.
+	 * Wipe every 2FA method for a user, on behalf of an actor who must be
+	 * allowed to edit that user.
 	 *
-	 * When $actor_id is 0 the capability check is skipped (WP-CLI / system).
+	 * An actor of 0 is nobody, not an exemption: a logged-out request reaching
+	 * here is refused. The unattended path is reset_as_system(), which callers
+	 * have to name deliberately.
 	 *
 	 * @return true|\WP_Error
 	 */
 	public static function reset_user( int $user_id, int $actor_id ) {
+		if ( $actor_id <= 0
+			|| ! user_can( $actor_id, 'edit_users' )
+			|| ! user_can( $actor_id, 'edit_user', $user_id ) ) {
+			return new \WP_Error(
+				'sigil_forbidden',
+				__( 'You are not allowed to reset two-factor authentication for this user.', 'sigil-2fa' )
+			);
+		}
+
+		return self::perform_reset( $user_id, $actor_id );
+	}
+
+	/**
+	 * The lockout escape hatch, for WP-CLI and other unattended contexts where
+	 * there is no current user. Reaching this already requires shell access to
+	 * the install, which outranks any capability.
+	 *
+	 * @return true|\WP_Error
+	 */
+	public static function reset_as_system( int $user_id ) {
+		return self::perform_reset( $user_id, 0 );
+	}
+
+	/**
+	 * @return true|\WP_Error
+	 */
+	private static function perform_reset( int $user_id, int $actor_id ) {
 		if ( $user_id <= 0 ) {
 			return new \WP_Error(
 				'sigil_invalid_user',
@@ -46,15 +76,6 @@ final class Recovery {
 				'sigil_invalid_user',
 				__( 'User not found.', 'sigil-2fa' )
 			);
-		}
-
-		if ( $actor_id > 0 ) {
-			if ( ! user_can( $actor_id, 'edit_users' ) || ! user_can( $actor_id, 'edit_user', $user_id ) ) {
-				return new \WP_Error(
-					'sigil_forbidden',
-					__( 'You are not allowed to reset two-factor authentication for this user.', 'sigil-2fa' )
-				);
-			}
 		}
 
 		require_once SIGIL_DIR . 'includes/class-credentials.php';

@@ -53,6 +53,24 @@ final class Challenge {
 	}
 
 	/**
+	 * What the user chose at the password step. Read this before complete(),
+	 * which consumes the token.
+	 *
+	 * @return array{remember: bool, redirect_to: string}|null
+	 */
+	public static function context_for( string $token ): ?array {
+		$payload = self::payload( $token );
+		if ( null === $payload ) {
+			return null;
+		}
+
+		return array(
+			'remember'    => $payload['remember'],
+			'redirect_to' => $payload['redirect_to'],
+		);
+	}
+
+	/**
 	 * @param array<string, mixed> $input
 	 * @return true|\WP_Error
 	 */
