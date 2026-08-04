@@ -301,13 +301,20 @@ final class REST {
 			);
 		}
 
+		// Minting assertion options is not free: each one occupies a slot in the
+		// user's small set of open challenges, so describing the login three
+		// times would evict the challenge a waiting tab is holding. Only mint
+		// when passkey is the method in play.
+		$wants_passkey = 'passkey' === sanitize_key( (string) $request->get_param( 'provider' ) )
+			|| ( $active && 'passkey' === $active->id() );
+
 		return rest_ensure_response(
 			array(
 				'user_id'         => (int) $user->ID,
 				'user_login'      => $user->user_login,
 				'methods'         => $methods,
 				'active'          => $active ? $active->id() : null,
-				'passkey_options' => $this->passkey_options( (int) $user->ID ),
+				'passkey_options' => $wants_passkey ? $this->passkey_options( (int) $user->ID ) : null,
 			)
 		);
 	}

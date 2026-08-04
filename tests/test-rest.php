@@ -184,6 +184,38 @@ class Test_REST extends WP_UnitTestCase {
 		$this->assertNull( $data['passkey_options'] );
 	}
 
+	// Each mint occupies a slot in the user's open passkey challenges, so simply
+	// describing the login must not evict the challenge a waiting tab holds.
+	public function test_describing_a_login_does_not_mint_passkey_options_unasked(): void {
+		$user = self::factory()->user->create_and_get();
+		\Sigil\Store::set_method( $user->ID, 'totp', array( 'secret' => 'x' ) );
+		\Sigil\Store::set_method( $user->ID, 'passkey', array( 'enrolled_at' => 1 ) );
+		\Sigil\Credentials::add( $user->ID, 'cred-describe', 'pk', 0, 'Key', 'internal' );
+		$token = \Sigil\Challenge::start( $user, false, '' );
+
+		$plain = $this->request( 'GET', '/sigil/v1/challenge', array( 'token' => $token ) )->get_data();
+		$asked = $this->request(
+			'GET',
+			'/sigil/v1/challenge',
+			array( 'token' => $token, 'provider' => 'passkey' )
+		)->get_data();
+
+		// Passkey outranks TOTP, so it is the active method and options come with it.
+		$this->assertSame( 'passkey', $plain['active'] );
+		$this->assertNotNull( $asked['passkey_options'] );
+	}
+
+	public function test_options_are_withheld_when_passkey_is_not_in_play(): void {
+		$user = self::factory()->user->create_and_get();
+		\Sigil\Store::set_method( $user->ID, 'totp', array( 'secret' => 'x' ) );
+		$token = \Sigil\Challenge::start( $user, false, '' );
+
+		$data = $this->request( 'GET', '/sigil/v1/challenge', array( 'token' => $token ) )->get_data();
+
+		$this->assertSame( 'totp', $data['active'] );
+		$this->assertNull( $data['passkey_options'] );
+	}
+
 	public function test_a_wrong_code_does_not_log_anyone_in(): void {
 		$user = self::factory()->user->create_and_get();
 		\Sigil\Store::set_method( $user->ID, 'email', array( 'enrolled_at' => 1 ) );
