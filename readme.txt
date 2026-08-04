@@ -4,7 +4,7 @@ Tags: two-factor, 2fa, passkeys, authentication, security
 Requires at least: 6.9
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 0.2.2
+Stable tag: 0.3.0
 License: GPL-3.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -101,6 +101,13 @@ Yes. Put `[sigil_2fa]` on a page. Users manage their methods from there, and any
 Yes. Settings → Sigil lets you pick exactly which roles are required, and set a grace period so people are prompted to enrol rather than locked out immediately.
 
 == Changelog ==
+
+= 0.3.0 =
+* You are now emailed when a second factor is added to or removed from your account. Adding one is how somebody who already has your password keeps access, and nothing about the account looks different afterwards, so the only person who can notice is you.
+* Anyone who becomes subject to a 2FA requirement is emailed once, when their deadline is set. People who never open the dashboard never saw the notice there, so the first they knew of a policy was the day it stopped them.
+* The login code email now says where the code was requested from. It says "may be a proxy" rather than naming a location, because that is all the server actually knows.
+* Administrators are warned when the server clock has drifted far enough to reject correct authenticator codes. Without it, a clock problem looks exactly like every user mistyping at once.
+* You can choose which method you are asked for first, if you have set up more than one.
 
 = 0.2.2 =
 * Adds two extension points: `sigil_challenge_text` for the wording of the two-factor screen, and `sigil_manage_capability` for which capability reaches the settings. Values are escaped after filtering, and the capability filter only narrows, never widens.
