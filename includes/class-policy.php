@@ -102,6 +102,17 @@ final class Policy {
 		$deadline = time() + ( (int) $policy['grace_days'] * DAY_IN_SECONDS );
 		update_user_meta( $user_id, self::DEADLINE_META, $deadline );
 
+		/**
+		 * Fires the first time a user is given a deadline to enrol by.
+		 *
+		 * The only moment we know someone has just come under the policy, and
+		 * the only chance to tell them before they meet it.
+		 *
+		 * @param int $user_id
+		 * @param int $deadline Unix timestamp.
+		 */
+		do_action( 'sigil_deadline_assigned', $user_id, $deadline );
+
 		return $deadline;
 	}
 

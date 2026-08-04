@@ -20,6 +20,11 @@ final class TOTP implements Provider {
 	// so a degenerate secret can never decode to a key that matches a fixed code.
 	private const MIN_SECRET_BYTES = 16;
 
+	// How far either side of the accepted window to look when a code is rejected,
+	// purely to tell "wrong code" apart from "wrong clock". 40 steps is 20 minutes.
+	private const DRIFT_SEARCH = 40;
+	private const DRIFT_KEY    = 'sigil_totp_drift';
+
 	public function id(): string {
 		return 'totp';
 	}
@@ -178,8 +183,11 @@ final class TOTP implements Provider {
 		}
 
 		if ( null === $matched_step ) {
+			self::note_clock_drift( $secret, $code, $step_now );
 			return false;
 		}
+
+		delete_transient( self::DRIFT_KEY );
 
 		$data['last_step'] = $matched_step;
 		Store::set_method( $user_id, $this->id(), $data );
@@ -189,6 +197,39 @@ final class TOTP implements Provider {
 
 	public function unenrol( int $user_id ): void {
 		Store::remove_method( $user_id, $this->id() );
+	}
+
+	/**
+	 * Work out whether a rejected code was actually right, just at the wrong time.
+	 *
+	 * A server clock that has drifted more than a step or two rejects every code
+	 * every user enters, and looks exactly like everyone suddenly typing it wrong.
+	 * Searching a wider window on failure turns that into an answer: if the code
+	 * matches a step well outside the accepted range, the clock is the problem.
+	 *
+	 * Only ever read to warn an administrator. Nothing authenticates on it.
+	 */
+	private static function note_clock_drift( string $secret, string $code, int $step_now ): void {
+		for ( $delta = -self::DRIFT_SEARCH; $delta <= self::DRIFT_SEARCH; $delta++ ) {
+			if ( abs( $delta ) <= self::WINDOW ) {
+				continue;
+			}
+
+			if ( hash_equals( self::hotp( $secret, $step_now + $delta ), $code ) ) {
+				set_transient( self::DRIFT_KEY, $delta * self::STEP_SECONDS, DAY_IN_SECONDS );
+				return;
+			}
+		}
+	}
+
+	/**
+	 * Seconds the server clock appears to be out by, or null if nothing suggests
+	 * it is. Positive means the server is behind the authenticator.
+	 */
+	public static function clock_drift(): ?int {
+		$drift = get_transient( self::DRIFT_KEY );
+
+		return is_numeric( $drift ) ? (int) $drift : null;
 	}
 
 	public static function generate_secret(): string {

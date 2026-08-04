@@ -38,6 +38,7 @@ final class Alerts {
 	private function __construct() {
 		add_action( 'sigil_before_methods_change', array( $this, 'remember' ) );
 		add_action( 'sigil_methods_changed', array( $this, 'notify' ) );
+		add_action( 'sigil_deadline_assigned', array( $this, 'warn_of_deadline' ), 10, 2 );
 	}
 
 	public function remember( int $user_id ): void {
@@ -116,6 +117,67 @@ final class Alerts {
 			$site_name,
 			implode( "\n", $lines ),
 			self::origin_line()
+		);
+
+		wp_mail( $user->user_email, $subject, $message );
+	}
+
+	/**
+	 * Tell someone they now have to set up a second factor, and by when.
+	 *
+	 * The admin notice this accompanies is only seen by people who visit the
+	 * dashboard. Subscribers and shop customers never do, so without this their
+	 * first knowledge of the policy is the day it stops them.
+	 */
+	public function warn_of_deadline( int $user_id, int $deadline ): void {
+		/**
+		 * Filter whether someone is told a deadline has been set for them.
+		 *
+		 * @param bool $send
+		 * @param int  $user_id
+		 */
+		if ( ! apply_filters( 'sigil_send_deadline_warning', true, $user_id ) ) {
+			return;
+		}
+
+		$user = get_userdata( $user_id );
+		if ( ! $user instanceof \WP_User || ! is_email( $user->user_email ) ) {
+			return;
+		}
+
+		$site_name = wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES );
+		if ( '' === $site_name ) {
+			$site_name = home_url();
+		}
+
+		/** This filter is documented in includes/class-enforcement.php */
+		$setup_url = apply_filters( 'sigil_setup_url', admin_url( 'users.php?page=' . Enrolment::PAGE_SLUG ) );
+
+		$subject = sprintf(
+			/* translators: %s: site name */
+			__( 'Set up two-factor authentication on %s', 'sigil-2fa' ),
+			$site_name
+		);
+
+		if ( $deadline <= time() ) {
+			$when = __( 'You need to do this before your next sign-in.', 'sigil-2fa' );
+		} else {
+			$when = sprintf(
+				/* translators: %s: human-readable time difference, e.g. "6 days" */
+				__( 'You have %s to do this.', 'sigil-2fa' ),
+				human_time_diff( time(), $deadline )
+			);
+		}
+
+		$message = sprintf(
+			/* translators: 1: site name, 2: how long they have, 3: setup URL */
+			__(
+				"%1\$s now requires a second step when you sign in.\n\n%2\$s After that you will be asked to set it up before you can continue.\n\nSet it up here:\n%3\$s",
+				'sigil-2fa'
+			),
+			$site_name,
+			$when,
+			$setup_url
 		);
 
 		wp_mail( $user->user_email, $subject, $message );

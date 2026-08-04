@@ -25,6 +25,7 @@ final class Enforcement {
 		add_action( 'admin_init', array( $this, 'maybe_redirect' ) );
 		add_action( 'template_redirect', array( $this, 'maybe_redirect' ) );
 		add_action( 'admin_notices', array( $this, 'grace_notice' ) );
+		add_action( 'admin_notices', array( $this, 'clock_notice' ) );
 		add_action( 'admin_post_sigil_dismiss_grace_notice', array( $this, 'dismiss_grace_notice' ) );
 	}
 
@@ -72,6 +73,32 @@ final class Enforcement {
 
 		wp_safe_redirect( $target );
 		exit;
+	}
+
+	/**
+	 * A drifted server clock rejects every authenticator code from every user and
+	 * is indistinguishable from everyone mistyping, so say it plainly when the
+	 * codes themselves show it.
+	 */
+	public function clock_notice(): void {
+		if ( ! current_user_can( Network::manage_capability() ) ) {
+			return;
+		}
+
+		$drift = Providers\Totp::clock_drift();
+		if ( null === $drift || 0 === $drift ) {
+			return;
+		}
+
+		echo '<div class="notice notice-error"><p>';
+		echo esc_html(
+			sprintf(
+				/* translators: %s: human-readable duration, e.g. "5 minutes" */
+				__( 'This server\'s clock looks about %s out of step with authenticator apps, which will reject codes that are actually correct. Ask your host to check NTP.', 'sigil-2fa' ),
+				human_time_diff( 0, abs( $drift ) )
+			)
+		);
+		echo '</p></div>';
 	}
 
 	public function grace_notice(): void {
