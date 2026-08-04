@@ -4,7 +4,7 @@ Tags: two-factor, 2fa, passkeys, authentication, security
 Requires at least: 6.9
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 0.1.3
+Stable tag: 0.2.0
 License: GPL-3.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -27,6 +27,20 @@ Sigil adds a second authentication step to WordPress logins. Users enrol a passk
 * Set a grace period so existing users get time to enrol instead of being locked out on the next login.
 * A "2FA" column on the Users screen shows who has set it up and who has not.
 
+**Enrolment without the dashboard**
+
+Put `[sigil_2fa]` on any page and users can set up and manage their methods there. Sites that keep members out of wp-admin need this, and enforcement redirects to that page when it exists instead of to an admin screen the user cannot open.
+
+**Multisite**
+
+Accounts are network-wide in WordPress, so second factors are too. One passkey or authenticator covers every site on the network, the policy is set once under Network Admin, and the rate limiter counts across the network rather than per site. On a network, resetting another user's 2FA is a Network Admin action, which is how WordPress governs user editing there.
+
+**REST API**
+
+Routes under `sigil/v1` read a user's methods, reset or remove them, read and edit the policy, and describe or complete a pending login challenge so a decoupled front end can run the second step itself. The challenge routes are authenticated by the challenge token issued after the password step. Reading and changing anything else requires the same capability as the equivalent screen.
+
+This does not add a second factor to token authentication. A request that authenticates with an application password never reaches the interactive login, so it is not challenged.
+
 **Recovery**
 
 Three ways back in if a second factor is lost:
@@ -44,7 +58,8 @@ Two-factor authentication does not apply to application passwords, which authent
 1. Install through Plugins → Add New and search for "Sigil", or upload the plugin files to `/wp-content/plugins/sigil-2fa/`.
 2. Activate it through the Plugins menu.
 3. Go to Users → Two-Factor Setup and enrol your first method. Save the backup codes it shows you.
-4. To require 2FA for other users, open Settings → Sigil and choose the roles and grace period.
+4. To require 2FA for other users, open Settings → Sigil and choose the roles and grace period. On a network, that screen is under Network Admin → Settings → Sigil.
+5. If your users do not have dashboard access, create a page containing `[sigil_2fa]` and they can enrol there.
 
 == Frequently Asked Questions ==
 
@@ -64,11 +79,26 @@ Application passwords bypass 2FA by design, as that is how WordPress authenticat
 
 Passkeys need PHP 8.0 or newer. On older PHP the plugin still runs and offers authenticator apps, backup codes, and email; only the passkey method is hidden.
 
+= Does it work on multisite? =
+
+Yes. The policy is set once for the network under Network Admin → Settings → Sigil, and a user's second factor works on every site because WordPress accounts are network-wide. A passkey covers sibling sites on a subdomain network; a site on its own mapped domain needs its own passkey, because a passkey is bound to the domain it was created for.
+
+= Can users set up 2FA without access to wp-admin? =
+
+Yes. Put `[sigil_2fa]` on a page. Users manage their methods from there, and anyone required to enrol is sent to that page rather than to the dashboard.
+
 = Can I enforce 2FA only for administrators? =
 
 Yes. Settings → Sigil lets you pick exactly which roles are required, and set a grace period so people are prompted to enrol rather than locked out immediately.
 
 == Changelog ==
+
+= 0.2.0 =
+* Multisite support. One set of credentials and one policy for the whole network, edited under Network Admin, with rate limiting that counts across sites. Passkeys anchor to the network domain where a site sits under it.
+* Front-end enrolment with the `[sigil_2fa]` shortcode, for sites whose users have no dashboard access. Enforcement sends people there when the page exists.
+* A REST API under `sigil/v1` for reading 2FA state, managing methods, editing the policy, and completing a login challenge from a decoupled front end.
+* Security: resetting a user's 2FA treated a missing actor as an exemption rather than as nobody. That was reachable only from the command line before this release, but it is now refused outright, with the unattended path named separately.
+* Fixed the enrolment redirect pointing at the wrong admin screen, and the provisioning URI appearing twice during authenticator setup.
 
 = 0.1.3 =
 * Fixed the two-factor screen at login: it had no stylesheet, so the method switcher rendered as a bare list and the buttons overlapped.

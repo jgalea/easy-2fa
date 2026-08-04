@@ -13,18 +13,43 @@ Sigil does one job completely instead of holding half of it back. Passkeys, per-
 
 ## Methods
 
-- Passkeys (WebAuthn) — Face ID, Touch ID, Windows Hello, or a hardware key. Needs PHP 8.0+; on older PHP the method is hidden and the rest still works.
-- Authenticator app (TOTP) — any RFC 6238 app.
-- Backup codes — ten single-use codes, generated at first enrolment.
-- Email codes — six digits to the account email, as a fallback.
+- Passkeys (WebAuthn): Face ID, Touch ID, Windows Hello, or a hardware key. Needs PHP 8.0+; on older PHP the method is hidden and the rest still works.
+- Authenticator app (TOTP), any RFC 6238 app.
+- Backup codes: ten single-use codes, generated at first enrolment.
+- Email codes: six digits to the account email, as a fallback.
 
 ## Enforcement
 
 Require 2FA per role or by capability, with a grace period so existing users get time to enrol. A "2FA" column on the Users screen shows who has set it up.
 
+## Enrolment without the dashboard
+
+Put `[sigil_2fa]` on a page and users manage their methods there. Sites that keep members out of wp-admin need this, and anyone required to enrol is sent to that page instead of an admin screen they cannot open.
+
+## Multisite
+
+WordPress accounts are network-wide, so second factors are too. One passkey or authenticator covers every site, the policy is set once under Network Admin, and the rate limiter counts across the network rather than per site. Passkeys anchor to the network domain where a site sits under it; a site on its own mapped domain needs its own passkey, since a passkey is bound to the domain it was created for.
+
+Resetting another user's 2FA is a Network Admin action on a network, matching how WordPress governs user editing there.
+
+## REST API
+
+Routes under `sigil/v1`:
+
+| Route | Method | Who |
+|---|---|---|
+| `/me` | GET | any logged-in user |
+| `/users/<id>` | GET | the user themselves, or `list_users` |
+| `/users/<id>/methods` | DELETE | `edit_users` on that user |
+| `/users/<id>/methods/<provider>` | DELETE | the user themselves, or `edit_users` |
+| `/policy` | GET, POST | `manage_options`, or `manage_network_options` on a network |
+| `/challenge` | GET, POST | the challenge token issued after the password step |
+
+The challenge routes let a decoupled front end run the second step itself, including passkeys. None of this adds a second factor to token authentication: a request authenticated with an application password never reaches the interactive login.
+
 ## Recovery
 
-Backup codes are shown at first enrolment. Any administrator can reset another user's 2FA from the Users screen, and `wp sigil reset <user>` clears a second factor from the command line when nobody can reach the dashboard.
+Backup codes are shown at first enrolment. An administrator can reset another user's 2FA from the Users screen, and `wp sigil reset <user>` clears a second factor from the command line when nobody can reach the dashboard.
 
 ## Application passwords
 
@@ -34,7 +59,8 @@ Application passwords authenticate the REST API and XML-RPC, and 2FA does not ap
 
 ```
 composer install && npm install
-composer test                             # unit tests
+composer test                              # unit tests, single site
+vendor/bin/phpunit -c phpunit-multisite.xml.dist   # unit tests, network install
 npx wp-env start && npx playwright test    # end-to-end, on localhost:8877
 ./build/build-free.sh                      # dist/sigil-2fa.zip
 ```
