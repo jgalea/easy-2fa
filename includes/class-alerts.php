@@ -1,0 +1,167 @@
+<?php
+
+declare( strict_types=1 );
+
+namespace Sigil;
+
+defined( 'ABSPATH' ) || exit;
+
+/**
+ * Tell the account holder when their second factor changes.
+ *
+ * Adding a factor is how an attacker who already has the password makes their
+ * access permanent, and it is silent: nothing about the account looks different
+ * afterwards. The person who notices is the owner, and only if someone tells
+ * them. Removing one is worth the same message for the same reason.
+ *
+ * A reset already sends its own notice, so this stays out of the way when one is
+ * in progress rather than sending two mails about the same event.
+ */
+final class Alerts {
+
+	private static ?Alerts $instance = null;
+
+	/**
+	 * Method ids seen before the change, so the mail can say which one it was.
+	 *
+	 * @var array<int, list<string>>
+	 */
+	private array $before = array();
+
+	public static function instance(): Alerts {
+		if ( null === self::$instance ) {
+			self::$instance = new self();
+		}
+		return self::$instance;
+	}
+
+	private function __construct() {
+		add_action( 'sigil_before_methods_change', array( $this, 'remember' ) );
+		add_action( 'sigil_methods_changed', array( $this, 'notify' ) );
+	}
+
+	public function remember( int $user_id ): void {
+		$this->before[ $user_id ] = array_keys( Store::methods( $user_id ) );
+	}
+
+	public function notify( int $user_id ): void {
+		if ( $user_id <= 0 ) {
+			return;
+		}
+
+		/**
+		 * Filter whether the account holder is told their factors changed.
+		 *
+		 * @param bool $send
+		 * @param int  $user_id
+		 */
+		if ( ! apply_filters( 'sigil_send_change_alert', true, $user_id ) ) {
+			return;
+		}
+
+		$user = get_userdata( $user_id );
+		if ( ! $user instanceof \WP_User || ! is_email( $user->user_email ) ) {
+			return;
+		}
+
+		$before = $this->before[ $user_id ] ?? null;
+		$after  = array_keys( Store::methods( $user_id ) );
+		unset( $this->before[ $user_id ] );
+
+		// Nothing observable changed, so there is nothing worth a mail.
+		if ( null !== $before && $before === $after ) {
+			return;
+		}
+
+		$added   = null === $before ? $after : array_values( array_diff( $after, $before ) );
+		$removed = null === $before ? array() : array_values( array_diff( $before, $after ) );
+
+		if ( array() === $added && array() === $removed ) {
+			return;
+		}
+
+		$site_name = wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES );
+		if ( '' === $site_name ) {
+			$site_name = home_url();
+		}
+
+		$lines = array();
+		if ( array() !== $added ) {
+			$lines[] = sprintf(
+				/* translators: %s: comma-separated list of method names */
+				__( 'Added: %s', 'sigil-2fa' ),
+				implode( ', ', self::labels( $added ) )
+			);
+		}
+		if ( array() !== $removed ) {
+			$lines[] = sprintf(
+				/* translators: %s: comma-separated list of method names */
+				__( 'Removed: %s', 'sigil-2fa' ),
+				implode( ', ', self::labels( $removed ) )
+			);
+		}
+
+		$subject = sprintf(
+			/* translators: %s: site name */
+			__( 'Your sign-in methods changed on %s', 'sigil-2fa' ),
+			$site_name
+		);
+
+		$message = sprintf(
+			/* translators: 1: site name, 2: list of changes, 3: request origin */
+			__(
+				"The two-factor methods on your %1\$s account were changed.\n\n%2\$s\n\n%3\$s\n\nIf this was not you, change your password and contact a site administrator immediately: someone with your password can use a second factor of their own to keep access.",
+				'sigil-2fa'
+			),
+			$site_name,
+			implode( "\n", $lines ),
+			self::origin_line()
+		);
+
+		wp_mail( $user->user_email, $subject, $message );
+	}
+
+	/**
+	 * Where the request came from, as far as the server can tell.
+	 *
+	 * Hedged rather than stated: behind a proxy REMOTE_ADDR is the proxy, and a
+	 * reader who trusts a wrong address draws a wrong conclusion.
+	 */
+	public static function origin_line(): string {
+		$ip = self::request_ip();
+
+		if ( '' === $ip ) {
+			return __( 'The request origin could not be determined.', 'sigil-2fa' );
+		}
+
+		return sprintf(
+			/* translators: %s: IP address */
+			__( 'Requested from %s, which may be a proxy rather than the device itself.', 'sigil-2fa' ),
+			$ip
+		);
+	}
+
+	public static function request_ip(): string {
+		if ( ! isset( $_SERVER['REMOTE_ADDR'] ) || ! is_string( $_SERVER['REMOTE_ADDR'] ) ) {
+			return '';
+		}
+
+		$ip = sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) );
+
+		return (string) filter_var( $ip, FILTER_VALIDATE_IP );
+	}
+
+	/**
+	 * @param list<string> $ids
+	 * @return list<string>
+	 */
+	private static function labels( array $ids ): array {
+		$out = array();
+		foreach ( $ids as $id ) {
+			$provider = Providers::instance()->get( (string) $id );
+			$out[]    = $provider ? $provider->label() : (string) $id;
+		}
+
+		return $out;
+	}
+}

@@ -80,6 +80,10 @@ final class Recovery {
 
 		require_once SIGIL_DIR . 'includes/class-credentials.php';
 
+		// A reset sends its own notice below, so the generic change alert would
+		// only be a second mail about one event.
+		add_filter( 'sigil_send_change_alert', '__return_false', 99 );
+
 		foreach ( Providers::instance()->all() as $provider ) {
 			if ( $provider->is_enrolled( $user_id ) ) {
 				$provider->unenrol( $user_id );
@@ -117,6 +121,8 @@ final class Recovery {
 		 * @param int $actor_id Actor user ID, or 0 for system/CLI.
 		 */
 		do_action( 'sigil_user_reset', $user_id, $actor_id );
+
+		remove_filter( 'sigil_send_change_alert', '__return_false', 99 );
 
 		return true;
 	}

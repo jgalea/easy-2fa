@@ -136,6 +136,14 @@ final class Enrolment {
 	 * @return true|\WP_Error
 	 */
 	public function complete_method( int $user_id, string $provider_id, array $input ) {
+		/**
+		 * Fires before a user's methods are about to change, so a listener can
+		 * see what they were.
+		 *
+		 * @param int $user_id
+		 */
+		do_action( 'sigil_before_methods_change', $user_id );
+
 		if ( ! $this->can_manage_methods( $user_id ) ) {
 			return new \WP_Error(
 				'sigil_forbidden',
@@ -192,6 +200,9 @@ final class Enrolment {
 	 * @return true|\WP_Error
 	 */
 	public function remove_method( int $user_id, string $provider_id ) {
+		/** This action is documented in includes/class-enrolment.php */
+		do_action( 'sigil_before_methods_change', $user_id );
+
 		if ( ! $this->can_manage_methods( $user_id ) ) {
 			return new \WP_Error(
 				'sigil_forbidden',

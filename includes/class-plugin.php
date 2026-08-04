@@ -52,6 +52,9 @@ final class Plugin {
 		require_once SIGIL_DIR . 'includes/class-enrolment.php';
 		Enrolment::instance();
 
+		require_once SIGIL_DIR . 'includes/class-alerts.php';
+		Alerts::instance();
+
 		require_once SIGIL_DIR . 'includes/class-enforcement.php';
 		Enforcement::instance();
 

@@ -173,13 +173,14 @@ final class Email implements Provider {
 		$subject = (string) apply_filters( 'sigil_email_subject', $subject, $user, $site_name );
 
 		$message = sprintf(
-			/* translators: 1: site name, 2: six-digit code */
+			/* translators: 1: site name, 2: six-digit code, 3: where the request came from */
 			__(
-				"Someone is trying to sign in to %1\$s.\n\nYour one-time code is: %2\$s\n\nThis code expires in ten minutes and can only be used once.\n\nNobody from %1\$s will ever ask you for this code. If you did not try to sign in, you can ignore this email.",
+				"Someone is trying to sign in to %1\$s.\n\nYour one-time code is: %2\$s\n\n%3\$s\n\nThis code expires in ten minutes and can only be used once.\n\nNobody from %1\$s will ever ask you for this code. If you did not try to sign in, you can ignore this email, and consider changing your password: whoever asked for this code already has it.",
 				'sigil-2fa'
 			),
 			$site_name,
-			$code
+			$code,
+			\Sigil\Alerts::origin_line()
 		);
 
 		/**
