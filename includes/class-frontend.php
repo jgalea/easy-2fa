@@ -18,6 +18,12 @@ defined( 'ABSPATH' ) || exit;
 final class Frontend {
 
 	public const SHORTCODE = 'sigil_2fa';
+
+	/**
+	 * Per site, never per network. A post ID means nothing on a sibling site, so
+	 * a network-wide value would point every site at whatever happens to share
+	 * that number.
+	 */
 	public const PAGE_OPTION = 'sigil_frontend_page';
 
 	private static ?Frontend $instance = null;
@@ -36,12 +42,23 @@ final class Frontend {
 	}
 
 	/**
-	 * The page holding the shortcode, remembered so enforcement can redirect to
-	 * it. Recorded on render rather than asked for in settings: the page is
-	 * whichever one the site actually put the shortcode on.
+	 * The recorded enrolment page, if it still qualifies as one.
+	 *
+	 * Re-checked on every use rather than trusted from storage: the page can be
+	 * unpublished, deleted, or edited to drop the shortcode after it was
+	 * recorded, and enforcement must not march users at any of those.
 	 */
+	public static function page_id(): int {
+		$page_id = (int) get_option( self::PAGE_OPTION, 0 );
+		if ( $page_id <= 0 ) {
+			return 0;
+		}
+
+		return self::qualifies( get_post( $page_id ) ) ? $page_id : 0;
+	}
+
 	public static function page_url(): string {
-		$page_id = (int) Network::get_option( self::PAGE_OPTION, 0 );
+		$page_id = self::page_id();
 		if ( $page_id <= 0 ) {
 			return '';
 		}
@@ -104,17 +121,42 @@ final class Frontend {
 		return (string) ob_get_clean();
 	}
 
+	/**
+	 * Note where the enrolment page lives, so enforcement can send people there
+	 * without the site having to configure anything.
+	 *
+	 * Rendering happens for anonymous visitors and carries no capability, so this
+	 * only ever fills an empty slot, and only from a published page. Publishing
+	 * pages is an editor-and-above capability; a contributor or author writing a
+	 * post cannot claim the slot, and nobody can take it from a site that has
+	 * already set one. Sites that want it pinned can use the sigil_setup_url
+	 * filter, which wins over this entirely.
+	 */
 	private function remember_page(): void {
-		$post_id = (int) get_the_ID();
-		if ( $post_id <= 0 || ! is_singular() ) {
+		if ( self::page_id() > 0 ) {
 			return;
 		}
 
-		if ( (int) Network::get_option( self::PAGE_OPTION, 0 ) === $post_id ) {
+		if ( ! is_singular() ) {
 			return;
 		}
 
-		Network::update_option( self::PAGE_OPTION, $post_id );
+		$post = get_post();
+		if ( ! self::qualifies( $post ) ) {
+			return;
+		}
+
+		update_option( self::PAGE_OPTION, (int) $post->ID, false );
+	}
+
+	/**
+	 * @param \WP_Post|null $post
+	 */
+	private static function qualifies( $post ): bool {
+		return $post instanceof \WP_Post
+			&& 'page' === $post->post_type
+			&& 'publish' === $post->post_status
+			&& has_shortcode( (string) $post->post_content, self::SHORTCODE );
 	}
 
 	private function post_has_shortcode(): bool {

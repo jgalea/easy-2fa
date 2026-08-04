@@ -18,7 +18,7 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 function sigil_uninstall_site(): void {
 	global $wpdb;
 
-	foreach ( array( 'sigil_db_version', 'sigil_policy' ) as $option ) {
+	foreach ( array( 'sigil_db_version', 'sigil_policy', 'sigil_frontend_page' ) as $option ) {
 		delete_option( $option );
 	}
 

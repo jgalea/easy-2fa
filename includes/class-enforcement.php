@@ -147,7 +147,7 @@ final class Enforcement {
 			return false;
 		}
 
-		if ( Store::has_any( $user_id ) ) {
+		if ( Providers::instance()->has_usable( $user_id ) ) {
 			return false;
 		}
 
@@ -193,8 +193,10 @@ final class Enforcement {
 		}
 
 		// The front-end enrolment page is where we send people, so it can never
-		// be a redirect target for itself.
-		if ( is_singular() && (int) get_the_ID() === (int) Network::get_option( Frontend::PAGE_OPTION, 0 ) ) {
+		// be a redirect target for itself. Frontend::page_id() re-checks that the
+		// page still qualifies, so a stale or hijacked id grants no exemption.
+		$front = Frontend::page_id();
+		if ( $front > 0 && is_singular() && (int) get_the_ID() === $front ) {
 			return true;
 		}
 

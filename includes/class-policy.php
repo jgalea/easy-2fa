@@ -110,7 +110,7 @@ final class Policy {
 			return false;
 		}
 
-		if ( Store::has_any( $user_id ) ) {
+		if ( Providers::instance()->has_usable( $user_id ) ) {
 			return false;
 		}
 

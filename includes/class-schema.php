@@ -57,6 +57,72 @@ final class Schema {
 		) {$charset_collate};";
 
 		dbDelta( $sql );
+		self::migrate_to_network();
 		Network::update_option( 'sigil_db_version', SIGIL_VERSION );
+	}
+
+	/**
+	 * Carry a pre-network install's data up to network scope.
+	 *
+	 * Before multisite support, both the policy and the credentials lived per
+	 * site. Leaving them there on upgrade would read as "no policy" and "no
+	 * passkeys": a passkey-only account would stop being challenged at login
+	 * while its method row still said it was covered, so nothing would prompt a
+	 * re-enrol either. That is a silent drop to password-only, which is worse
+	 * than any migration risk.
+	 *
+	 * phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery
+	 * phpcs:disable WordPress.DB.DirectDatabaseQuery.NoCaching
+	 */
+	private static function migrate_to_network(): void {
+		if ( ! is_multisite() ) {
+			return;
+		}
+
+		global $wpdb;
+
+		$network_table = self::table();
+
+		if ( false === get_site_option( Policy::OPTION_KEY, false ) ) {
+			switch_to_blog( get_main_site_id() );
+			$legacy_policy = get_option( Policy::OPTION_KEY, false );
+			restore_current_blog();
+
+			if ( is_array( $legacy_policy ) ) {
+				update_site_option( Policy::OPTION_KEY, $legacy_policy );
+			}
+		}
+
+		$site_ids = get_sites(
+			array(
+				'fields'                 => 'ids',
+				'number'                 => 0,
+				'update_site_meta_cache' => false,
+			)
+		);
+
+		foreach ( $site_ids as $site_id ) {
+			$legacy_table = $wpdb->get_blog_prefix( (int) $site_id ) . 'sigil_credentials';
+			if ( $legacy_table === $network_table ) {
+				continue;
+			}
+
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- table name from get_blog_prefix(), which cannot be a placeholder.
+			$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $legacy_table ) );
+			if ( $exists !== $legacy_table ) {
+				continue;
+			}
+
+			// INSERT IGNORE so a credential already carried over, or one that
+			// somehow exists on two sites, does not abort the whole migration.
+			// The old table is left in place: this is not a step to undo blindly.
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- both table names are plugin-owned, built from prefixes.
+			$wpdb->query(
+				"INSERT IGNORE INTO {$network_table}
+					(user_id, credential_id, public_key, sign_count, transports, label, created_at, last_used_at)
+				 SELECT user_id, credential_id, public_key, sign_count, transports, label, created_at, last_used_at
+				 FROM {$legacy_table}"
+			);
+		}
 	}
 }

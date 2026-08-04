@@ -80,6 +80,19 @@ final class Providers {
 		);
 	}
 
+	/**
+	 * Whether the user has a second factor that can actually be used right now.
+	 *
+	 * Deliberately not Store::has_any(), which only reads the stored method list.
+	 * A method row can outlive the thing behind it: passkey credentials restored
+	 * away, a table lost, or a provider unavailable on this PHP version. Treating
+	 * those as enrolled would leave the account on password only at login while
+	 * enforcement believed it was covered, and never prompt a re-enrol.
+	 */
+	public function has_usable( int $user_id ): bool {
+		return array() !== $this->enrolled_for( $user_id );
+	}
+
 	public function preferred_for( int $user_id ): ?Provider {
 		$enrolled = $this->enrolled_for( $user_id );
 		return $enrolled[0] ?? null;
