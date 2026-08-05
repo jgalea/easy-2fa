@@ -79,7 +79,7 @@ class Test_Pro_Wizard extends WP_UnitTestCase {
 
 	public function test_the_prompt_stops_once_it_is_dismissed(): void {
 		$this->assertFalse( \Sigil\Pro\Wizard::is_done() );
-		update_option( \Sigil\Pro\Wizard::OPTION, true, false );
+		\Sigil\Network::update_option( \Sigil\Pro\Wizard::OPTION, true );
 		$this->assertTrue( \Sigil\Pro\Wizard::is_done() );
 	}
 }

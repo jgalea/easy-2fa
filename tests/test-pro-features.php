@@ -59,6 +59,78 @@ class Test_Pro_Features extends WP_UnitTestCase {
 		$this->assertTrue( \Sigil\Pro\Method_Policy::allowed_for( $editor, 'email' ), 'a role with no rule keeps everything' );
 	}
 
+	/**
+	 * On a network the free plugin keeps its policy network-wide, and pro used
+	 * to keep its own beside it per site. A network administrator restricting
+	 * methods got that restriction on whichever site they happened to be on,
+	 * and nowhere else, with nothing to say so.
+	 *
+	 * @group ms-required
+	 */
+	public function test_pro_settings_are_network_wide(): void {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped( 'network behaviour' );
+		}
+
+		\Sigil\Pro\Method_Policy::update(
+			array( 'subscriber' => array( 'email' => false, 'totp' => true ) )
+		);
+		\Sigil\Pro\Zero_Setup::set_enabled( true );
+
+		$other = self::factory()->blog->create();
+		switch_to_blog( $other );
+
+		$policy  = \Sigil\Pro\Method_Policy::get();
+		$enabled = \Sigil\Pro\Zero_Setup::is_enabled();
+
+		restore_current_blog();
+
+		$this->assertSame( array( 'email' => false, 'totp' => true ), $policy['subscriber'] ?? array() );
+		$this->assertTrue( $enabled, 'the zero-setup floor applies across the network too' );
+	}
+
+	// The settings screen promises that a role with nothing ticked keeps every
+	// method, so a misconfiguration cannot lock anyone out. It writes every cell
+	// explicitly, so an all-unticked row was stored as all-denied, and that role
+	// could then enrol nothing while enforcement still insisted that it enrol
+	// something.
+	public function test_a_role_with_nothing_ticked_is_dropped(): void {
+		$policy = \Sigil\Pro\Method_Policy::without_empty_roles(
+			array(
+				'subscriber' => array(
+					'email'   => false,
+					'totp'    => false,
+					'backup'  => false,
+					'passkey' => false,
+				),
+				'editor'     => array(
+					'email'   => false,
+					'totp'    => true,
+					'backup'  => false,
+					'passkey' => false,
+				),
+			)
+		);
+
+		$this->assertArrayNotHasKey( 'subscriber', $policy );
+		$this->assertArrayHasKey( 'editor', $policy, 'one box left ticked is a rule' );
+
+		\Sigil\Pro\Method_Policy::update( $policy );
+
+		$subscriber = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+		$this->assertTrue( \Sigil\Pro\Method_Policy::allowed_for( $subscriber, 'totp' ) );
+		$this->assertTrue( \Sigil\Pro\Method_Policy::allowed_for( $subscriber, 'email' ) );
+	}
+
+	// A row that names one method and denies it is a rule, not an empty row.
+	public function test_a_single_denial_is_left_alone(): void {
+		$policy = \Sigil\Pro\Method_Policy::without_empty_roles(
+			array( 'subscriber' => array( 'email' => false ) )
+		);
+
+		$this->assertSame( array( 'subscriber' => array( 'email' => false ) ), $policy );
+	}
+
 	// Holding two roles must widen what someone may use, never narrow it, or
 	// adding a role would quietly take a method away.
 	public function test_the_more_permissive_role_wins(): void {
