@@ -4,7 +4,7 @@ Tags: two-factor, 2fa, passkeys, authentication, security
 Requires at least: 6.9
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 0.3.0
+Stable tag: 0.3.1
 License: GPL-3.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -101,6 +101,12 @@ Yes. Put `[sigil_2fa]` on a page. Users manage their methods from there, and any
 Yes. Settings → Sigil lets you pick exactly which roles are required, and set a grace period so people are prompted to enrol rather than locked out immediately.
 
 == Changelog ==
+
+= 0.3.1 =
+* Repeated login guesses are now counted in a way that a burst of simultaneous requests cannot outrun. The previous counter read a number, added one and wrote it back, so guesses arriving together all read the same number, and the real limit became however many requests could be made at once rather than the five it promised.
+* A server that does not report the visitor's address no longer counts everybody together, where five failures anywhere would have held up every account on the site.
+* Failed attempts are cleared out daily instead of being kept indefinitely.
+* If the table the counter lives in goes missing, it is rebuilt rather than being allowed to refuse every sign-in.
 
 = 0.3.0 =
 * You are now emailed when a second factor is added to or removed from your account. Adding one is how somebody who already has your password keeps access, and nothing about the account looks different afterwards, so the only person who can notice is you.
