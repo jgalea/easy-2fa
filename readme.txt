@@ -4,7 +4,7 @@ Tags: two-factor, 2fa, passkeys, authentication, security
 Requires at least: 6.9
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 0.3.1
+Stable tag: 0.3.2
 License: GPL-3.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -101,6 +101,13 @@ Yes. Put `[sigil_2fa]` on a page. Users manage their methods from there, and any
 Yes. Settings → Sigil lets you pick exactly which roles are required, and set a grace period so people are prompted to enrol rather than locked out immediately.
 
 == Changelog ==
+
+= 0.3.2 =
+* A percent sign in the challenge wording no longer breaks the login screen. The line naming the person signing in was formatted rather than substituted, so wording like "50% off" stopped anybody with a second factor from completing a sign-in.
+* An account holding only passkeys is no longer asked for a code when resetting its password. It was being emailed one that could never be accepted, which left the account unrecoverable.
+* The two-factor column on the users list now reads each account's own rules rather than those of the administrator looking at the page, so an account no longer shows as having nothing set up when it has.
+* Importing settings now says what happened, including when the imported policy is switched on but names nobody.
+* The page carrying the enrolment form is only adopted when an administrator wrote it.
 
 = 0.3.1 =
 * Repeated login guesses are now counted in a way that a burst of simultaneous requests cannot outrun. The previous counter read a number, added one and wrote it back, so guesses arriving together all read the same number, and the real limit became however many requests could be made at once rather than the five it promised.
