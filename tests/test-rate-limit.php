@@ -67,7 +67,7 @@ class Test_Rate_Limit extends WP_UnitTestCase {
 
 		$table = \Sigil\Rate_Limit::table();
 		$wpdb->query( "DROP TABLE IF EXISTS {$table}" );
-		self::allow_repair_again();
+		self::set_repair_spent( false );
 
 		$this->assertSame( 1, \Sigil\Rate_Limit::reserve( 'probe' ), 'the attempt is counted against a rebuilt table' );
 		$this->assertSame(
@@ -84,8 +84,11 @@ class Test_Rate_Limit extends WP_UnitTestCase {
 
 		$table = \Sigil\Rate_Limit::table();
 		$wpdb->query( "DROP TABLE IF EXISTS {$table}" );
-		// The repair has already been spent, which is the state a request lands
-		// in when the table cannot be created at all.
+
+		// Standing in for a database where the table cannot be created at all:
+		// the repair has been tried and did not help.
+		self::set_repair_spent( true );
+
 		$reserved = \Sigil\Rate_Limit::reserve( 'probe' );
 
 		$this->assertGreaterThan( \Sigil\Rate_Limit::max_attempts(), $reserved );

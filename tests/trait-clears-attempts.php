@@ -40,11 +40,12 @@ trait Clears_Attempts {
 
 	/**
 	 * The one-repair-per-request latch is process-wide, and a test process is
-	 * many requests.
+	 * many requests. Set it rather than inheriting whatever the test before
+	 * happened to leave behind.
 	 */
-	protected static function allow_repair_again(): void {
+	protected static function set_repair_spent( bool $spent ): void {
 		$latch = new ReflectionProperty( \Sigil\Rate_Limit::class, 'repaired' );
 		$latch->setAccessible( true );
-		$latch->setValue( null, false );
+		$latch->setValue( null, $spent );
 	}
 }

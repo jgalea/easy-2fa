@@ -66,9 +66,7 @@ final class Rate_Limit {
 
 		$table = self::table();
 
-		$prior = $wpdb->suppress_errors( true );
-		$wpdb->query( $wpdb->prepare( "DELETE FROM {$table} WHERE expires < %d", time() ) );
-		$wpdb->suppress_errors( $prior );
+		self::run( $wpdb->prepare( "DELETE FROM {$table} WHERE expires < %d", time() ) );
 	}
 
 	/**
@@ -105,10 +103,7 @@ final class Rate_Limit {
 			$expiry
 		);
 
-		// Suppressed so a missing table is handled here rather than printed.
-		$prior = $wpdb->suppress_errors( true );
-		$ok    = $wpdb->query( $sql );
-		$wpdb->suppress_errors( $prior );
+		$ok = self::run( $sql );
 
 		if ( false === $ok && ! self::$repaired ) {
 			// Refusing every attempt is the safe answer for a limiter, and also
@@ -119,9 +114,7 @@ final class Rate_Limit {
 			self::$repaired = true;
 			Schema::install();
 
-			$prior = $wpdb->suppress_errors( true );
-			$ok    = $wpdb->query( $sql );
-			$wpdb->suppress_errors( $prior );
+			$ok = self::run( $sql );
 		}
 
 		if ( false === $ok ) {
@@ -182,6 +175,23 @@ final class Rate_Limit {
 		global $wpdb;
 
 		$wpdb->delete( self::table(), array( 'bucket' => self::bucket( $key ) ), array( '%s' ) );
+	}
+
+	/**
+	 * Errors are suppressed because a missing table is answered here rather
+	 * than printed into the page or the log on every attempt.
+	 *
+	 * @return int|bool Rows affected, or false when the query could not run.
+	 */
+	private static function run( string $sql ) {
+		global $wpdb;
+
+		$prior = $wpdb->suppress_errors( true );
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- every caller passes the result of $wpdb->prepare().
+		$result = $wpdb->query( $sql );
+		$wpdb->suppress_errors( $prior );
+
+		return $result;
 	}
 
 	private static function bucket( string $key ): string {

@@ -28,6 +28,11 @@ class Test_Pro_Features extends WP_UnitTestCase {
 		foreach ( array( 'class-trusted-devices', 'class-method-policy', 'class-branding', 'class-portability', 'class-password-reset', 'class-destinations', 'class-zero-setup' ) as $file ) {
 			require_once SIGIL_DIR . 'pro/' . $file . '.php';
 		}
+
+		// The suite restores WordPress's hook table between tests, which strips
+		// the filters a singleton added when it was first constructed.
+		\Sigil\Pro\Trusted_Devices::instance()->register();
+		\Sigil\Pro\Method_Policy::instance()->register();
 	}
 
 	public function tear_down(): void {
@@ -196,6 +201,51 @@ class Test_Pro_Features extends WP_UnitTestCase {
 	 *
 	 * @param array<string, string> $post
 	 */
+	// A trusted device is a standing permission to skip the second step, and a
+	// new password is what somebody does when they think another person has
+	// been in the account.
+	public function test_changing_the_password_revokes_trusted_devices(): void {
+		$user   = self::factory()->user->create( array( 'user_pass' => 'first-password' ) );
+		$device = \Sigil\Pro\Trusted_Devices::instance();
+		$token  = $device->trust_current_device( $user );
+
+		$this->assertTrue( $device->is_trusted( $user, $token ), 'the device is trusted to begin with' );
+
+		wp_update_user(
+			array(
+				'ID'        => $user,
+				'user_pass' => 'second-password',
+			)
+		);
+
+		$this->assertFalse( $device->is_trusted( $user, $token ) );
+	}
+
+	public function test_an_unrelated_profile_edit_leaves_trust_alone(): void {
+		$user   = self::factory()->user->create( array( 'user_pass' => 'first-password' ) );
+		$device = \Sigil\Pro\Trusted_Devices::instance();
+		$token  = $device->trust_current_device( $user );
+
+		wp_update_user(
+			array(
+				'ID'         => $user,
+				'first_name' => 'Renamed',
+			)
+		);
+
+		$this->assertTrue( $device->is_trusted( $user, $token ), 'changing a name is not a credential change' );
+	}
+
+	public function test_a_password_reset_revokes_trusted_devices(): void {
+		$user   = self::factory()->user->create_and_get( array( 'user_pass' => 'first-password' ) );
+		$device = \Sigil\Pro\Trusted_Devices::instance();
+		$token  = $device->trust_current_device( (int) $user->ID );
+
+		reset_password( $user, 'third-password' );
+
+		$this->assertFalse( $device->is_trusted( (int) $user->ID, $token ) );
+	}
+
 	private function reset_errors( int $user_id, array $post ): \WP_Error {
 		$_POST  = $post;
 		$errors = new \WP_Error();
