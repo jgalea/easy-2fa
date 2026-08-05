@@ -63,13 +63,10 @@ class Test_Rate_Limit extends WP_UnitTestCase {
 	// lockout at the same time, so a counter that has gone missing is put back
 	// rather than left to stop everyone signing in.
 	public function test_a_missing_counter_is_rebuilt(): void {
-		global $wpdb;
-
-		$table = \Sigil\Rate_Limit::table();
-		$wpdb->query( "DROP TABLE {$table}" );
+		$dropped = self::drop_table();
 		self::set_repair_spent( false );
 
-		$this->assertFalse( self::table_exists(), 'the table has to be gone for this to mean anything' );
+		$this->assertFalse( self::table_exists(), 'the table has to be gone for this to mean anything: ' . $dropped );
 
 		$this->assertSame( 1, \Sigil\Rate_Limit::reserve( 'probe' ), 'the attempt is counted against a rebuilt table' );
 		$this->assertTrue( self::table_exists(), 'and the table is there afterwards' );
@@ -78,16 +75,13 @@ class Test_Rate_Limit extends WP_UnitTestCase {
 	// When it cannot be put back there is no counter to trust, and an uncounted
 	// guess is worse than a refused one.
 	public function test_a_counter_that_cannot_be_rebuilt_fails_closed(): void {
-		global $wpdb;
-
-		$table = \Sigil\Rate_Limit::table();
-		$wpdb->query( "DROP TABLE {$table}" );
+		$dropped = self::drop_table();
 
 		// Standing in for a database where the table cannot be created at all:
 		// the repair has been tried and did not help.
 		self::set_repair_spent( true );
 
-		$this->assertFalse( self::table_exists(), 'the table has to be gone for this to mean anything' );
+		$this->assertFalse( self::table_exists(), 'the table has to be gone for this to mean anything: ' . $dropped );
 		$this->assertTrue( self::repair_is_spent(), 'and the repair has to be spent' );
 
 		$reserved = \Sigil\Rate_Limit::reserve( 'probe' );

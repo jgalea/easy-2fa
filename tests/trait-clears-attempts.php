@@ -59,14 +59,38 @@ trait Clears_Attempts {
 	}
 
 	protected static function table_exists(): bool {
+		return '' !== self::found_table();
+	}
+
+	protected static function found_table(): string {
+		global $wpdb;
+
+		$prior = $wpdb->suppress_errors( true );
+		$found = $wpdb->get_var( "SHOW TABLES LIKE '" . esc_sql( \Sigil\Rate_Limit::table() ) . "'" );
+		$wpdb->suppress_errors( $prior );
+
+		return (string) $found;
+	}
+
+	/**
+	 * Drop the counter and say what happened, so a test that depends on it
+	 * being gone can fail on that rather than on what it was trying to prove.
+	 */
+	protected static function drop_table(): string {
 		global $wpdb;
 
 		$table = \Sigil\Rate_Limit::table();
 
-		$prior = $wpdb->suppress_errors( true );
-		$found = $wpdb->get_var( "SHOW TABLES LIKE '" . esc_sql( $table ) . "'" );
+		$prior   = $wpdb->suppress_errors( true );
+		$dropped = $wpdb->query( "DROP TABLE {$table}" );
+		$error   = $wpdb->last_error;
 		$wpdb->suppress_errors( $prior );
 
-		return (string) $found === $table;
+		return sprintf(
+			'drop returned %s, error "%s", SHOW TABLES now "%s"',
+			var_export( $dropped, true ),
+			$error,
+			self::found_table()
+		);
 	}
 }
