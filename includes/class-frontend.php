@@ -147,6 +147,16 @@ final class Frontend {
 			return;
 		}
 
+		// Written by somebody who could have configured this anyway. An
+		// administrator only has to open the page once for it to become the
+		// place people are sent to set up their second factor, and an editor who
+		// can publish can choose every word around the form. The form itself is
+		// the real one, so this is framing rather than capture, but the framing
+		// is the whole of a convincing prompt.
+		if ( ! user_can( (int) $post->post_author, 'manage_options' ) ) {
+			return;
+		}
+
 		update_option( self::PAGE_OPTION, (int) $post->ID, false );
 	}
 

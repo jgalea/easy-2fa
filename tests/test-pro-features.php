@@ -122,6 +122,32 @@ class Test_Pro_Features extends WP_UnitTestCase {
 		$this->assertTrue( \Sigil\Pro\Method_Policy::allowed_for( $subscriber, 'email' ) );
 	}
 
+	// "Enabled" decides nothing on its own: a policy naming no role and no
+	// capability is switched on and applies to nobody, so an import that leaves
+	// the flag standing while emptying coverage was a silent disabling by
+	// another route.
+	public function test_an_import_that_covers_nobody_is_reported(): void {
+		\Sigil\Policy::update(
+			array(
+				'enabled'        => true,
+				'roles'          => array( 'administrator' => true ),
+				'min_capability' => '',
+			)
+		);
+
+		$export                    = \Sigil\Pro\Portability::export();
+		$export['policy']['roles'] = array();
+
+		$imported = \Sigil\Pro\Portability::import( (string) wp_json_encode( $export ) );
+		$this->assertNotWPError( $imported );
+
+		$policy = \Sigil\Policy::get();
+		$this->assertTrue( $policy['enabled'], 'the flag is still on' );
+
+		$admin = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		$this->assertFalse( \Sigil\Policy::required_for( $admin ), 'and it now applies to nobody' );
+	}
+
 	// An import can rule on a subset, where all-denied is a deny-list rather
 	// than an empty row, so it is not normalised on the way in.
 	public function test_an_imported_deny_list_survives(): void {
@@ -175,26 +201,54 @@ class Test_Pro_Features extends WP_UnitTestCase {
 		\Sigil\Pro\Method_Policy::update(
 			array( 'subscriber' => array( 'email' => false, 'totp' => true, 'backup' => true, 'passkey' => true ) )
 		);
-
-		wp_set_current_user( self::factory()->user->create( array( 'role' => 'subscriber' ) ) );
 		\Sigil\Pro\Method_Policy::instance()->register();
 
-		$ids = static function (): array {
+		$subscriber = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+
+		$ids = static function ( int $user_id ): array {
 			return array_map(
 				static function ( \Sigil\Provider $provider ): string {
 					return $provider->id();
 				},
-				\Sigil\Providers::instance()->all()
+				\Sigil\Providers::instance()->all( $user_id )
 			);
 		};
 
-		set_current_screen( 'users' );
-		$this->assertNotContains( 'email', $ids(), 'hidden while choosing a method' );
-		$this->assertContains( 'totp', $ids() );
+		$this->assertNotContains( 'email', $ids( $subscriber ), 'hidden while choosing a method' );
+		$this->assertContains( 'totp', $ids( $subscriber ) );
 
-		set_current_screen( 'front' );
-		$this->assertContains( 'email', $ids(), 'untouched where someone is signing in' );
+		$this->assertContains( 'email', $ids( 0 ), 'untouched where the question is not about anybody' );
 	}
+
+	/**
+	 * The users list builds this for every row while an administrator is the
+	 * current user. Keying the rule on the viewer answered the wrong question:
+	 * a subscriber holding a method the viewer's own role may not use read as
+	 * having nothing set up, on the screen an administrator uses to decide
+	 * whether to reset somebody's account.
+	 */
+	public function test_the_policy_follows_the_account_being_looked_at(): void {
+		\Sigil\Pro\Method_Policy::update(
+			array( 'administrator' => array( 'email' => false, 'totp' => true, 'backup' => true, 'passkey' => true ) )
+		);
+		\Sigil\Pro\Method_Policy::instance()->register();
+
+		$subscriber = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+		\Sigil\Store::set_method( $subscriber, 'email', array( 'enrolled_at' => time() ) );
+
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+		set_current_screen( 'users' );
+
+		$enrolled = array_map(
+			static function ( \Sigil\Provider $provider ): string {
+				return $provider->id();
+			},
+			\Sigil\Providers::instance()->enrolled_for( $subscriber )
+		);
+
+		$this->assertSame( array( 'email' ), $enrolled );
+	}
+
 
 	// A policy that allows nothing would leave an account unable to authenticate
 	// at all, so it is treated as a misconfiguration rather than obeyed.
@@ -360,6 +414,53 @@ class Test_Pro_Features extends WP_UnitTestCase {
 		reset_password( $user, 'third-password' );
 
 		$this->assertFalse( $device->is_trusted( (int) $user->ID, $token ) );
+	}
+
+	// A passkey cannot be typed into the reset form. The account was still asked
+	// for a code, and sent an email one that could never be accepted, because
+	// the code is checked against enrolled methods and email was not one. That
+	// is a form refusing every possible entry, reached by someone who has
+	// already lost their way in.
+	public function test_a_passkey_only_account_is_not_asked_for_a_code(): void {
+		$user = $this->passkey_only_user();
+
+		$errors = $this->reset_errors( $user, array( 'pass1' => 'a-new-password' ) );
+
+		$this->assertSame( array(), $errors->get_error_codes(), 'the reset has to go through' );
+
+		ob_start();
+		\Sigil\Pro\Password_Reset::instance()->render_field( get_user_by( 'id', $user ) );
+		$this->assertSame( '', trim( (string) ob_get_clean() ), 'and no field is offered' );
+	}
+
+	// Holding a passkey alongside something typeable is still guarded.
+	public function test_a_passkey_account_with_backup_codes_is_still_asked(): void {
+		$user = $this->passkey_only_user();
+		\Sigil\Providers::instance()->get( 'backup' )->generate( $user );
+
+		$errors = $this->reset_errors( $user, array( 'pass1' => 'a-new-password' ) );
+
+		$this->assertContains( 'sigil_pro_reset_code_missing', $errors->get_error_codes() );
+	}
+
+	/**
+	 * A passkey counts as enrolled only when a credential row exists, so the
+	 * method meta on its own would leave the account holding nothing and the
+	 * test would pass against any behaviour at all.
+	 */
+	private function passkey_only_user(): int {
+		\Sigil\Schema::install();
+
+		$user = self::factory()->user->create();
+		\Sigil\Store::set_method( $user, 'passkey', array( 'enrolled_at' => 1 ) );
+		\Sigil\Credentials::add( $user, 'cred-' . $user, 'public-key', 0, 'Phone', 'internal' );
+
+		$this->assertTrue(
+			\Sigil\Providers::instance()->get( 'passkey' )->is_enrolled( $user ),
+			'the passkey has to be enrolled for this to mean anything'
+		);
+
+		return $user;
 	}
 
 	private function reset_errors( int $user_id, array $post ): \WP_Error {

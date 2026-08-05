@@ -107,6 +107,11 @@ class Test_Pro_Coverage extends WP_UnitTestCase {
 		\Sigil\Pro\Bypass::instance()->register();
 
 		$this->assertTrue( (bool) apply_filters( 'sigil_skip_challenge', false, $user ), 'the excused sign-in goes through' );
+
+		// Spent by the sign-in rather than by the question, so that anything
+		// else consulting the filter cannot burn somebody's one excuse.
+		do_action( 'wp_login', $user->user_login, $user );
+
 		$this->assertFalse( (bool) apply_filters( 'sigil_skip_challenge', false, $user ), 'and the next one does not' );
 	}
 

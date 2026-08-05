@@ -84,6 +84,8 @@ final class Recovery {
 		// only be a second mail about one event.
 		add_filter( 'sigil_send_change_alert', '__return_false', 99 );
 
+		// Deliberately the unnarrowed list: a reset has to reach every method the
+		// account holds, including one a policy would no longer let it choose.
 		foreach ( Providers::instance()->all() as $provider ) {
 			if ( $provider->is_enrolled( $user_id ) ) {
 				$provider->unenrol( $user_id );

@@ -65,11 +65,20 @@ foreach ( $challenge_providers as $provider ) {
 	<h1 class="sigil-challenge__title"><?php echo esc_html( $sigil_say( 'title', __( 'Two-factor authentication', 'sigil-2fa' ) ) ); ?></h1>
 	<p class="sigil-challenge__intro">
 		<?php
+		/*
+		 * Substituted rather than passed through sprintf. This line can come
+		 * from a settings field, and sprintf throws on a bare percent sign or a
+		 * second placeholder: "50% off" or "Hi %s, %s" would take the whole
+		 * login screen down for everyone holding a second factor. {{login}} is
+		 * the same placeholder the branded emails use; %s is still honoured for
+		 * the default string and for anyone who already typed it.
+		 */
 		echo esc_html(
-			sprintf(
+			str_replace(
+				array( '{{login}}', '%1$s', '%s' ),
+				$challenge_user->user_login,
 				/* translators: %s: username */
-				$sigil_say( 'intro', __( 'Signing in as %s.', 'sigil-2fa' ) ),
-				$challenge_user->user_login
+				$sigil_say( 'intro', __( 'Signing in as %s.', 'sigil-2fa' ) )
 			)
 		);
 		?>

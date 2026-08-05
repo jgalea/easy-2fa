@@ -150,30 +150,50 @@ class Test_Council_Round_Two extends WP_UnitTestCase {
 		$this->assertContains( 'email', $ids, 'chosen email is still email' );
 	}
 
-	// One excused sign-in has to mean one, even if two logins arrive together.
-	public function test_an_excused_sign_in_cannot_be_spent_twice(): void {
+	// One excused sign-in has to mean one, and asking whether somebody would be
+	// challenged is not a sign-in. sigil_skip_challenge is a documented
+	// extension point, so a grant spent by the question would leave the person
+	// it was granted to still locked out.
+	public function test_an_excused_sign_in_is_spent_by_the_sign_in_only(): void {
 		$actor = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		if ( is_multisite() ) {
 			grant_super_admin( $actor );
 		}
-		$user = self::factory()->user->create_and_get();
+		$user   = self::factory()->user->create_and_get();
+		$bypass = \Sigil\Pro\Bypass::instance();
 
 		\Sigil\Pro\Bypass::grant_for( (int) $user->ID, $actor );
-		\Sigil\Pro\Bypass::instance()->register();
+		$bypass->register();
+
+		$this->assertTrue( $bypass->maybe_skip( false, $user ), 'the excuse is live' );
+		$this->assertTrue( $bypass->maybe_skip( false, $user ), 'and asking again does not spend it' );
+
+		$bypass->spend( $user->user_login, $user );
+
+		$this->assertFalse( $bypass->maybe_skip( false, $user ), 'the sign-in spends it' );
+
+		// A second sign-in on the same grant, and a spend with nothing to spend.
+		$bypass->spend( $user->user_login, $user );
+		$this->assertFalse( $bypass->maybe_skip( false, $user ) );
+	}
+
+	// Two sign-ins arriving together must not both be excused.
+	public function test_two_simultaneous_sign_ins_spend_one_excuse(): void {
+		$actor = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		if ( is_multisite() ) {
+			grant_super_admin( $actor );
+		}
+		$user   = self::factory()->user->create_and_get();
+		$bypass = \Sigil\Pro\Bypass::instance();
+
+		\Sigil\Pro\Bypass::grant_for( (int) $user->ID, $actor );
+		$bypass->register();
 
 		$grant = get_user_meta( (int) $user->ID, '_sigil_pro_bypass', true );
 
-		// Both requests read the same live grant before either deletes it.
-		$first  = \Sigil\Pro\Bypass::instance()->maybe_skip( false, $user );
-		update_user_meta( (int) $user->ID, '_sigil_pro_bypass', $grant );
-		$second = \Sigil\Pro\Bypass::instance()->maybe_skip( false, $user );
-		\Sigil\Pro\Bypass::revoke( (int) $user->ID );
-
-		$this->assertTrue( $first );
-		$this->assertTrue( $second, 'a re-granted excuse is a new one' );
-		$this->assertFalse(
-			\Sigil\Pro\Bypass::instance()->maybe_skip( false, $user ),
-			'but a spent one is gone'
-		);
+		// Both requests hold the same grant they read a moment ago.
+		$bypass->spend( $user->user_login, $user );
+		$this->assertFalse( delete_user_meta( (int) $user->ID, '_sigil_pro_bypass', $grant ), 'the second delete takes nothing' );
+		$this->assertFalse( $bypass->maybe_skip( false, $user ) );
 	}
 }

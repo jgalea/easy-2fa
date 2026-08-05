@@ -44,8 +44,15 @@ final class Providers {
 	 *
 	 * @return list<Provider>
 	 */
-	public function all(): array {
-		$registry = apply_filters( 'sigil_providers', $this->providers );
+	/**
+	 * @param int $user_id The account the list is being built for, 0 when the
+	 *                     question is not about anybody in particular. Filters
+	 *                     that narrow the list by policy need to know whose
+	 *                     policy applies: the person being looked at, which on
+	 *                     an admin screen is rarely the person looking.
+	 */
+	public function all( int $user_id = 0 ): array {
+		$registry = apply_filters( 'sigil_providers', $this->providers, $user_id );
 		if ( ! is_array( $registry ) ) {
 			$registry = $this->providers;
 		}
@@ -74,7 +81,7 @@ final class Providers {
 	public function enrolled_for( int $user_id ): array {
 		return array_values(
 			array_filter(
-				$this->all(),
+				$this->all( $user_id ),
 				static function ( Provider $provider ) use ( $user_id ): bool {
 					return $provider->is_enrolled( $user_id );
 				}

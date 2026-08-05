@@ -467,7 +467,9 @@ final class Enrolment {
 	}
 
 	public function render_enrol_ui( int $user_id, bool $is_setup_page ): void {
-		$providers = Providers::instance()->all();
+		// Named, because an administrator can be looking at somebody else's
+		// profile and it is that account's rules that decide what it may enrol.
+		$providers = Providers::instance()->all( $user_id );
 		$methods   = Store::methods( $user_id );
 		$notices   = $this->consume_notices();
 

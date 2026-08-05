@@ -431,7 +431,7 @@ final class REST {
 		}
 
 		$available = array();
-		foreach ( Providers::instance()->all() as $provider ) {
+		foreach ( Providers::instance()->all( $user_id ) as $provider ) {
 			$available[] = array(
 				'id'    => $provider->id(),
 				'label' => $provider->label(),

@@ -62,6 +62,11 @@ class Test_Council_Fixes extends WP_UnitTestCase {
 	/**
 	 * @param array<string, mixed> $args
 	 */
+	/**
+	 * Authored by an administrator unless a test says otherwise. The slot only
+	 * accepts a page written by somebody who could have configured this anyway,
+	 * so an unowned page would never qualify.
+	 */
 	private function make_content( array $args ): int {
 		return (int) self::factory()->post->create(
 			array_merge(
@@ -69,10 +74,20 @@ class Test_Council_Fixes extends WP_UnitTestCase {
 					'post_type'    => 'page',
 					'post_status'  => 'publish',
 					'post_content' => '[sigil_2fa]',
+					'post_author'  => $this->administrator(),
 				),
 				$args
 			)
 		);
+	}
+
+	private function administrator(): int {
+		$admin = (int) self::factory()->user->create( array( 'role' => 'administrator' ) );
+		if ( is_multisite() ) {
+			grant_super_admin( $admin );
+		}
+
+		return $admin;
 	}
 
 	private function render( int $post_id ): void {
@@ -81,11 +96,7 @@ class Test_Council_Fixes extends WP_UnitTestCase {
 	}
 
 	private function render_as_admin( int $post_id ): void {
-		$admin = self::factory()->user->create( array( 'role' => 'administrator' ) );
-		if ( is_multisite() ) {
-			grant_super_admin( $admin );
-		}
-		wp_set_current_user( $admin );
+		wp_set_current_user( $this->administrator() );
 		$this->render( $post_id );
 		wp_set_current_user( 0 );
 	}
@@ -161,6 +172,21 @@ class Test_Council_Fixes extends WP_UnitTestCase {
 
 		$this->assertSame( 0, \Sigil\Frontend::page_id() );
 		$this->assertSame( '', \Sigil\Frontend::page_url() );
+	}
+
+	/**
+	 * An editor can publish, so an editor can write a page holding the
+	 * enrolment form and every word around it, then get an administrator to
+	 * open it once. The form is the real one, which makes this framing rather
+	 * than capture, and framing is the whole of a convincing prompt.
+	 */
+	public function test_a_page_written_by_an_editor_does_not_claim_the_slot(): void {
+		$editor = self::factory()->user->create( array( 'role' => 'editor' ) );
+		$page   = $this->make_content( array( 'post_author' => $editor ) );
+
+		$this->render_as_admin( $page );
+
+		$this->assertSame( 0, \Sigil\Frontend::page_id() );
 	}
 
 	public function test_the_enrolment_page_is_stored_per_site(): void {
