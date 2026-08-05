@@ -66,15 +66,13 @@ class Test_Rate_Limit extends WP_UnitTestCase {
 		global $wpdb;
 
 		$table = \Sigil\Rate_Limit::table();
-		$wpdb->query( "DROP TABLE IF EXISTS {$table}" );
+		$wpdb->query( "DROP TABLE {$table}" );
 		self::set_repair_spent( false );
 
+		$this->assertFalse( self::table_exists(), 'the table has to be gone for this to mean anything' );
+
 		$this->assertSame( 1, \Sigil\Rate_Limit::reserve( 'probe' ), 'the attempt is counted against a rebuilt table' );
-		$this->assertSame(
-			$table,
-			$wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ),
-			'and the table is there afterwards'
-		);
+		$this->assertTrue( self::table_exists(), 'and the table is there afterwards' );
 	}
 
 	// When it cannot be put back there is no counter to trust, and an uncounted
@@ -83,11 +81,14 @@ class Test_Rate_Limit extends WP_UnitTestCase {
 		global $wpdb;
 
 		$table = \Sigil\Rate_Limit::table();
-		$wpdb->query( "DROP TABLE IF EXISTS {$table}" );
+		$wpdb->query( "DROP TABLE {$table}" );
 
 		// Standing in for a database where the table cannot be created at all:
 		// the repair has been tried and did not help.
 		self::set_repair_spent( true );
+
+		$this->assertFalse( self::table_exists(), 'the table has to be gone for this to mean anything' );
+		$this->assertTrue( self::repair_is_spent(), 'and the repair has to be spent' );
 
 		$reserved = \Sigil\Rate_Limit::reserve( 'probe' );
 

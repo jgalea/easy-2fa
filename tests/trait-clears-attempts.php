@@ -44,8 +44,29 @@ trait Clears_Attempts {
 	 * happened to leave behind.
 	 */
 	protected static function set_repair_spent( bool $spent ): void {
+		self::latch()->setValue( null, $spent );
+	}
+
+	protected static function repair_is_spent(): bool {
+		return (bool) self::latch()->getValue();
+	}
+
+	private static function latch(): ReflectionProperty {
 		$latch = new ReflectionProperty( \Sigil\Rate_Limit::class, 'repaired' );
 		$latch->setAccessible( true );
-		$latch->setValue( null, $spent );
+
+		return $latch;
+	}
+
+	protected static function table_exists(): bool {
+		global $wpdb;
+
+		$table = \Sigil\Rate_Limit::table();
+
+		$prior = $wpdb->suppress_errors( true );
+		$found = $wpdb->get_var( "SHOW TABLES LIKE '" . esc_sql( $table ) . "'" );
+		$wpdb->suppress_errors( $prior );
+
+		return (string) $found === $table;
 	}
 }
