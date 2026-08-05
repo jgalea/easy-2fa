@@ -122,6 +122,24 @@ class Test_Pro_Features extends WP_UnitTestCase {
 		$this->assertTrue( \Sigil\Pro\Method_Policy::allowed_for( $subscriber, 'email' ) );
 	}
 
+	// An import can rule on a subset, where all-denied is a deny-list rather
+	// than an empty row, so it is not normalised on the way in.
+	public function test_an_imported_deny_list_survives(): void {
+		// Built from a real export so the envelope is whatever the code writes,
+		// rather than a guess that import would refuse before storing anything.
+		$export = \Sigil\Pro\Portability::export();
+		$export['methods'] = array( 'subscriber' => array( 'email' => false, 'totp' => false ) );
+
+		$imported = \Sigil\Pro\Portability::import( (string) wp_json_encode( $export ) );
+		$this->assertNotWPError( $imported, 'the import has to be accepted for this to mean anything' );
+
+		$subscriber = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+
+		$this->assertFalse( \Sigil\Pro\Method_Policy::allowed_for( $subscriber, 'email' ) );
+		$this->assertFalse( \Sigil\Pro\Method_Policy::allowed_for( $subscriber, 'totp' ) );
+		$this->assertTrue( \Sigil\Pro\Method_Policy::allowed_for( $subscriber, 'backup' ), 'what it does not name stays allowed' );
+	}
+
 	// A row that names one method and denies it is a rule, not an empty row.
 	public function test_a_single_denial_is_left_alone(): void {
 		$policy = \Sigil\Pro\Method_Policy::without_empty_roles(
@@ -306,6 +324,32 @@ class Test_Pro_Features extends WP_UnitTestCase {
 		);
 
 		$this->assertTrue( $device->is_trusted( $user, $token ), 'changing a name is not a credential change' );
+	}
+
+	// Membership, single sign-on and password-expiry plugins set a password
+	// directly rather than going through the profile or the reset form.
+	public function test_setting_a_password_directly_revokes_trusted_devices(): void {
+		$user   = self::factory()->user->create( array( 'user_pass' => 'first-password' ) );
+		$device = \Sigil\Pro\Trusted_Devices::instance();
+		$token  = $device->trust_current_device( $user );
+
+		wp_set_password( 'second-password', $user );
+
+		$this->assertFalse( $device->is_trusted( $user, $token ) );
+	}
+
+	// Core sets the password again, unchanged, when a stored hash needs
+	// rehashing at login. Treating that as a credential change would revoke
+	// every device on the site as people signed in after a hashing change.
+	public function test_a_rehash_of_the_same_password_keeps_trust(): void {
+		$user   = self::factory()->user->create( array( 'user_pass' => 'first-password' ) );
+		$device = \Sigil\Pro\Trusted_Devices::instance();
+		$token  = $device->trust_current_device( $user );
+
+		$before = get_userdata( $user );
+		$device->revoke_on_set_password( 'first-password', $user, $before );
+
+		$this->assertTrue( $device->is_trusted( $user, $token ) );
 	}
 
 	public function test_a_password_reset_revokes_trusted_devices(): void {
