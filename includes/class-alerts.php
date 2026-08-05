@@ -204,13 +204,7 @@ final class Alerts {
 	}
 
 	public static function request_ip(): string {
-		if ( ! isset( $_SERVER['REMOTE_ADDR'] ) || ! is_string( $_SERVER['REMOTE_ADDR'] ) ) {
-			return '';
-		}
-
-		$ip = sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) );
-
-		return (string) filter_var( $ip, FILTER_VALIDATE_IP );
+		return Request::client_ip();
 	}
 
 	/**

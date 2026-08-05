@@ -10,6 +10,18 @@ final class Challenge {
 
 	private const TTL = 5 * MINUTE_IN_SECONDS;
 
+	/**
+	 * How many unspent tokens one account may hold at once.
+	 *
+	 * A token is claimed on use, so one token buys one guess. Nothing bounded
+	 * how many could be minted, though, and each fresh one is another guess:
+	 * hold the password, ask for fifty, spend one on each. The attempt counter
+	 * is what actually stops that now, and this keeps the pile of unspent
+	 * tokens from growing without limit alongside it. Retries are covered by
+	 * the eviction order: the live token is always the newest.
+	 */
+	private const MAX_OPEN_TOKENS = 5;
+
 	private static ?Challenge $instance = null;
 
 	public static function instance(): Challenge {
@@ -38,8 +50,35 @@ final class Challenge {
 		);
 
 		set_transient( self::transient_key( $token ), $payload, self::TTL );
+		self::remember_open( (int) $user->ID, $token );
 
 		return $token;
+	}
+
+	/**
+	 * Keep the newest few and drop the rest, oldest first.
+	 *
+	 * Spent tokens leave a dead entry behind rather than being tracked out of
+	 * the list, which costs nothing: deleting a transient that has already gone
+	 * is a no-op, and because eviction runs oldest first a dead entry is always
+	 * discarded before a live one.
+	 */
+	private static function remember_open( int $user_id, string $token ): void {
+		$key = 'sigil_ch_open_' . $user_id;
+
+		$open   = Network::get_transient( $key );
+		$open   = is_array( $open ) ? $open : array();
+		$open[] = self::transient_key( $token );
+
+		$excess = count( $open ) - self::MAX_OPEN_TOKENS;
+		if ( $excess > 0 ) {
+			foreach ( array_slice( $open, 0, $excess ) as $stale ) {
+				delete_transient( (string) $stale );
+			}
+			$open = array_slice( $open, $excess );
+		}
+
+		Network::set_transient( $key, $open, self::TTL );
 	}
 
 	public static function user_for( string $token ): ?\WP_User {
@@ -88,7 +127,7 @@ final class Challenge {
 		// comes back with. Asking whether we are blocked and then counting is two
 		// steps, and a burst of parallel guesses passes the first step together.
 		if ( Rate_Limit::reserve( $user_key ) > Rate_Limit::max_attempts()
-			|| Rate_Limit::reserve( $ip_key ) > Rate_Limit::max_attempts() ) {
+			|| Rate_Limit::reserve( $ip_key ) > Rate_Limit::max_ip_attempts() ) {
 			// Nothing was guessed, so the token survives for a later retry.
 			return self::retryable(
 				'sigil_rate_limited',
@@ -312,19 +351,15 @@ final class Challenge {
 	/**
 	 * Empty when there is no address to count against.
 	 *
-	 * Hashing an absent REMOTE_ADDR gives every such request the same bucket, so
-	 * on a server that does not set it, five failures anywhere would throttle
-	 * everybody at once. No address means no second bucket; the per-user count
-	 * still applies.
+	 * Hashing an absent address gives every such request the same bucket, so on
+	 * a server that does not report one, failures anywhere would throttle
+	 * everybody at once. No address means no second bucket; the per-account
+	 * count still applies.
 	 */
 	private static function ip_rate_key(): string {
-		$raw = isset( $_SERVER['REMOTE_ADDR'] ) && is_string( $_SERVER['REMOTE_ADDR'] )
-			? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) )
-			: '';
+		$ip = Request::client_ip();
 
-		$ip = filter_var( $raw, FILTER_VALIDATE_IP );
-
-		return false === $ip ? '' : 'ip:' . hash( 'sha256', (string) $ip );
+		return '' === $ip ? '' : 'ip:' . hash( 'sha256', $ip );
 	}
 
 	private static function sanitize_redirect( string $redirect_to ): string {

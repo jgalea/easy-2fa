@@ -35,6 +35,16 @@ final class Rate_Limit {
 	public const PURGE_HOOK = 'sigil_purge_attempts';
 
 	private const MAX_ATTEMPTS = 5;
+
+	/**
+	 * The address bucket counts further before it closes, because an address is
+	 * not a person. An office, a school or a phone network arrives from one
+	 * address, and holding all of them to one person's allowance means a few
+	 * colleagues mistyping can stop everybody else signing in. Guessing any
+	 * single account is still bounded by MAX_ATTEMPTS; this only bounds how
+	 * widely one address may spray across different accounts.
+	 */
+	private const MAX_IP_ATTEMPTS = 20;
 	private const WINDOW       = 15 * MINUTE_IN_SECONDS;
 
 	/**
@@ -139,6 +149,10 @@ final class Rate_Limit {
 
 	public static function max_attempts(): int {
 		return self::MAX_ATTEMPTS;
+	}
+
+	public static function max_ip_attempts(): int {
+		return self::MAX_IP_ATTEMPTS;
 	}
 
 	public static function blocked( string $key ): bool {
