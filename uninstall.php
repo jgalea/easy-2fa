@@ -46,6 +46,9 @@ function sigil_uninstall(): void {
 	// Both are cleared once rather than once per site.
 	$prefix = is_multisite() ? $wpdb->base_prefix : $wpdb->prefix;
 	$wpdb->query( "DROP TABLE IF EXISTS {$prefix}sigil_credentials" );
+	$wpdb->query( "DROP TABLE IF EXISTS {$prefix}sigil_attempts" );
+
+	wp_clear_scheduled_hook( 'sigil_purge_attempts' );
 
 	foreach ( array( '_sigil_methods', '_sigil_deadline', '_sigil_reset_log', '_sigil_email_debug_code', '_sigil_preferred_method', '_sigil_pro_trusted', '_sigil_pro_bypass' ) as $meta_key ) {
 		$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->usermeta} WHERE meta_key = %s", $meta_key ) );

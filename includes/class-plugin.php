@@ -33,6 +33,7 @@ final class Plugin {
 		Providers::instance();
 
 		require_once SIGIL_DIR . 'includes/class-rate-limit.php';
+		Rate_Limit::schedule_purge();
 		require_once SIGIL_DIR . 'includes/class-challenge.php';
 		Challenge::instance();
 

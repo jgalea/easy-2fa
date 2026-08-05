@@ -6,30 +6,172 @@ namespace Sigil;
 
 defined( 'ABSPATH' ) || exit;
 
+// Every read and write here is a direct query against the plugin's own table.
+// A counter that answers from cache is not a counter, and the table name cannot
+// be bound as a parameter.
+// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery
+// phpcs:disable WordPress.DB.DirectDatabaseQuery.NoCaching
+// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+// phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter
+
+/**
+ * Attempt counting that a burst of parallel requests cannot outrun.
+ *
+ * The obvious implementation, read the count and write back one more, is not
+ * atomic: fire fifty guesses at once and every one of them reads the same number
+ * and writes the same number back, so the counter advances by one and the real
+ * ceiling becomes however many requests an attacker can make at the same
+ * moment. Claiming the challenge token bounds one token to one guess, but
+ * nothing bounds how many tokens somebody with the password can mint, so that
+ * alone does not close it.
+ *
+ * The count therefore lives in a table with a primary key, and every attempt is
+ * reserved by a single statement that increments and returns the new value.
+ * Whoever asks for the sixth attempt is told it is the sixth, whatever else is
+ * happening at the same time.
+ */
 final class Rate_Limit {
+
+	public const PURGE_HOOK = 'sigil_purge_attempts';
 
 	private const MAX_ATTEMPTS = 5;
 	private const WINDOW       = 15 * MINUTE_IN_SECONDS;
 
-	public static function hit( string $key ): void {
+	/**
+	 * One repair attempt per request. Without it a genuinely broken database
+	 * would run dbDelta on every single call.
+	 */
+	private static bool $repaired = false;
+
+	public static function table(): string {
+		return Network::table_prefix() . 'sigil_attempts';
+	}
+
+	/**
+	 * Nothing else deletes a bucket once its window has run out. A busy login
+	 * page writes one row per user and per address, so without this the table
+	 * only ever grows, and the rows it keeps are a record of who tried to sign
+	 * in and from where.
+	 */
+	public static function schedule_purge(): void {
+		add_action( self::PURGE_HOOK, array( __CLASS__, 'purge_expired' ) );
+
+		if ( ! wp_next_scheduled( self::PURGE_HOOK ) ) {
+			wp_schedule_event( time() + HOUR_IN_SECONDS, 'daily', self::PURGE_HOOK );
+		}
+	}
+
+	public static function purge_expired(): void {
+		global $wpdb;
+
+		$table = self::table();
+
+		$prior = $wpdb->suppress_errors( true );
+		$wpdb->query( $wpdb->prepare( "DELETE FROM {$table} WHERE expires < %d", time() ) );
+		$wpdb->suppress_errors( $prior );
+	}
+
+	/**
+	 * Take one attempt and say which number it was.
+	 *
+	 * Callers decide with this rather than with a separate read, because a read
+	 * followed by a write is the thing being avoided.
+	 */
+	public static function reserve( string $key ): int {
 		if ( '' === $key ) {
-			return;
+			return 0;
 		}
 
-		$tk    = self::transient_key( $key );
-		$count = (int) Network::get_transient( $tk );
-		if ( $count < 0 ) {
-			$count = 0;
+		global $wpdb;
+
+		$table  = self::table();
+		$bucket = self::bucket( $key );
+		$now    = time();
+		$expiry = $now + self::WINDOW;
+
+		// One statement: insert the first attempt, or add one to an existing
+		// window, or start a fresh window if the old one has run out.
+		// LAST_INSERT_ID() carries the resulting count back on this connection,
+		// so the answer belongs to this request and not to whoever wrote last.
+		$sql = $wpdb->prepare(
+			"INSERT INTO {$table} (bucket, attempts, expires) VALUES (%s, 1, %d)
+			 ON DUPLICATE KEY UPDATE
+				attempts = LAST_INSERT_ID( IF( expires < %d, 1, attempts + 1 ) ),
+				expires  = IF( expires < %d, %d, expires )",
+			$bucket,
+			$expiry,
+			$now,
+			$now,
+			$expiry
+		);
+
+		// Suppressed so a missing table is handled here rather than printed.
+		$prior = $wpdb->suppress_errors( true );
+		$ok    = $wpdb->query( $sql );
+		$wpdb->suppress_errors( $prior );
+
+		if ( false === $ok && ! self::$repaired ) {
+			// Refusing every attempt is the safe answer for a limiter, and also
+			// a site-wide lockout: nobody holding a second factor could finish
+			// signing in. So try once to put the table back before accepting
+			// that outcome. A dropped table, a half-finished upgrade, and a
+			// version stamp that ran ahead of the schema all land here.
+			self::$repaired = true;
+			Schema::install();
+
+			$prior = $wpdb->suppress_errors( true );
+			$ok    = $wpdb->query( $sql );
+			$wpdb->suppress_errors( $prior );
 		}
-		Network::set_transient( $tk, $count + 1, self::WINDOW );
+
+		if ( false === $ok ) {
+			// Still no table, so there is no counter to trust. Refusing reads as
+			// "rate limited", which fails closed rather than leaving guesses
+			// uncounted.
+			return PHP_INT_MAX;
+		}
+
+		// A fresh row is the first attempt by definition. Only the update branch
+		// ran LAST_INSERT_ID, and on the insert branch insert_id still holds
+		// whatever the last query on this connection left there, which is not
+		// ours to read.
+		if ( 1 === $wpdb->rows_affected ) {
+			return 1;
+		}
+
+		$count = (int) $wpdb->insert_id;
+
+		return $count > 0 ? $count : self::count( $key );
+	}
+
+	public static function max_attempts(): int {
+		return self::MAX_ATTEMPTS;
 	}
 
 	public static function blocked( string $key ): bool {
+		return self::count( $key ) >= self::MAX_ATTEMPTS;
+	}
+
+	public static function count( string $key ): int {
 		if ( '' === $key ) {
-			return false;
+			return 0;
 		}
 
-		return (int) Network::get_transient( self::transient_key( $key ) ) >= self::MAX_ATTEMPTS;
+		global $wpdb;
+
+		$table = self::table();
+
+		$prior = $wpdb->suppress_errors( true );
+		$row   = $wpdb->get_row(
+			$wpdb->prepare( "SELECT attempts, expires FROM {$table} WHERE bucket = %s", self::bucket( $key ) )
+		);
+		$wpdb->suppress_errors( $prior );
+
+		if ( ! $row || (int) $row->expires < time() ) {
+			return 0;
+		}
+
+		return (int) $row->attempts;
 	}
 
 	public static function clear( string $key ): void {
@@ -37,10 +179,12 @@ final class Rate_Limit {
 			return;
 		}
 
-		Network::delete_transient( self::transient_key( $key ) );
+		global $wpdb;
+
+		$wpdb->delete( self::table(), array( 'bucket' => self::bucket( $key ) ), array( '%s' ) );
 	}
 
-	private static function transient_key( string $key ): string {
-		return 'sigil_rl_' . hash( 'sha256', $key );
+	private static function bucket( string $key ): string {
+		return hash( 'sha256', $key );
 	}
 }

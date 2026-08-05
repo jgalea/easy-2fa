@@ -10,17 +10,22 @@ declare( strict_types=1 );
  */
 class Test_Pro_Features extends WP_UnitTestCase {
 
+	// This class has its own set_up, which wins over the trait's, so the clear
+	// is called there by hand.
+	use Clears_Attempts;
+
 	// RFC 6238 canonical example, the same one test-crypto.php and test-totp.php use.
 	private const SECRET = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ';
 
 	public function set_up(): void {
 		parent::set_up();
+		self::forget_attempts();
 
 		if ( ! defined( 'SIGIL_PRO' ) || ! SIGIL_PRO ) {
 			$this->markTestSkipped( 'pro add-on not installed' );
 		}
 
-		foreach ( array( 'class-trusted-devices', 'class-method-policy', 'class-branding', 'class-portability', 'class-password-reset', 'class-destinations' ) as $file ) {
+		foreach ( array( 'class-trusted-devices', 'class-method-policy', 'class-branding', 'class-portability', 'class-password-reset', 'class-destinations', 'class-zero-setup' ) as $file ) {
 			require_once SIGIL_DIR . 'pro/' . $file . '.php';
 		}
 	}

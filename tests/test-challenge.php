@@ -3,6 +3,9 @@
 declare( strict_types=1 );
 
 class Test_Challenge extends WP_UnitTestCase {
+
+	use Clears_Attempts;
+
 	public function test_token_resolves_to_user(): void {
 		$user = self::factory()->user->create_and_get();
 		$tok  = \Sigil\Challenge::start( $user, false );

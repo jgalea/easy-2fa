@@ -12,6 +12,8 @@ declare( strict_types=1 );
  */
 class Test_Token_Claim extends WP_UnitTestCase {
 
+	use Clears_Attempts;
+
 	private const SECRET = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ'; // base32 of "12345678901234567890"
 
 	/**
@@ -92,7 +94,7 @@ class Test_Token_Claim extends WP_UnitTestCase {
 		$token = \Sigil\Challenge::start( $user, false, '' );
 
 		for ( $i = 0; $i < 6; $i++ ) {
-			\Sigil\Rate_Limit::hit( 'u:' . $user->ID );
+			\Sigil\Rate_Limit::reserve( 'u:' . $user->ID );
 		}
 
 		$error = \Sigil\Challenge::complete( $token, 'totp', array( 'code' => '000000' ) );

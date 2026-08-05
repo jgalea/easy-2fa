@@ -84,7 +84,11 @@ final class Challenge {
 		$user_key = 'u:' . $user_id;
 		$ip_key   = self::ip_rate_key();
 
-		if ( Rate_Limit::blocked( $user_key ) || Rate_Limit::blocked( $ip_key ) ) {
+		// Take the attempt before checking anything, and decide on the number it
+		// comes back with. Asking whether we are blocked and then counting is two
+		// steps, and a burst of parallel guesses passes the first step together.
+		if ( Rate_Limit::reserve( $user_key ) > Rate_Limit::max_attempts()
+			|| Rate_Limit::reserve( $ip_key ) > Rate_Limit::max_attempts() ) {
 			// Nothing was guessed, so the token survives for a later retry.
 			return self::retryable(
 				'sigil_rate_limited',
@@ -110,14 +114,10 @@ final class Challenge {
 		$provider_id = sanitize_key( $provider_id );
 		$provider    = Providers::instance()->get( $provider_id );
 		if ( null === $provider || ! $provider->is_enrolled( $user_id ) ) {
-			Rate_Limit::hit( $user_key );
-			Rate_Limit::hit( $ip_key );
 			return self::retryable( 'sigil_invalid_method', __( 'Verification failed.', 'sigil-2fa' ), self::reissue( $payload ) );
 		}
 
 		if ( ! $provider->validate( $user_id, $input ) ) {
-			Rate_Limit::hit( $user_key );
-			Rate_Limit::hit( $ip_key );
 			return self::retryable( 'sigil_invalid_code', __( 'Verification failed.', 'sigil-2fa' ), self::reissue( $payload ) );
 		}
 
@@ -309,13 +309,22 @@ final class Challenge {
 		return 'sigil_ch_' . hash( 'sha256', $token );
 	}
 
+	/**
+	 * Empty when there is no address to count against.
+	 *
+	 * Hashing an absent REMOTE_ADDR gives every such request the same bucket, so
+	 * on a server that does not set it, five failures anywhere would throttle
+	 * everybody at once. No address means no second bucket; the per-user count
+	 * still applies.
+	 */
 	private static function ip_rate_key(): string {
-		$ip = '';
-		if ( isset( $_SERVER['REMOTE_ADDR'] ) && is_string( $_SERVER['REMOTE_ADDR'] ) ) {
-			$ip = sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) );
-		}
+		$raw = isset( $_SERVER['REMOTE_ADDR'] ) && is_string( $_SERVER['REMOTE_ADDR'] )
+			? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) )
+			: '';
 
-		return 'ip:' . hash( 'sha256', $ip );
+		$ip = filter_var( $raw, FILTER_VALIDATE_IP );
+
+		return false === $ip ? '' : 'ip:' . hash( 'sha256', (string) $ip );
 	}
 
 	private static function sanitize_redirect( string $redirect_to ): string {

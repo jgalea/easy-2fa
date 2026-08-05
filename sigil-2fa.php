@@ -35,4 +35,12 @@ register_activation_hook(
 	}
 );
 
+register_deactivation_hook(
+	__FILE__,
+	static function (): void {
+		// Otherwise the daily event outlives the code that answers it.
+		wp_clear_scheduled_hook( 'sigil_purge_attempts' );
+	}
+);
+
 Sigil\Plugin::instance()->boot();

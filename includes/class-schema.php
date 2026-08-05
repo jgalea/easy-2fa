@@ -56,6 +56,15 @@ final class Schema {
 			KEY user_id (user_id)
 		) {$charset_collate};";
 
+		$attempts = Rate_Limit::table();
+		$sql     .= " CREATE TABLE {$attempts} (
+			bucket CHAR(64) NOT NULL,
+			attempts INT UNSIGNED NOT NULL DEFAULT 0,
+			expires BIGINT UNSIGNED NOT NULL DEFAULT 0,
+			PRIMARY KEY  (bucket),
+			KEY expires (expires)
+		) {$charset_collate};";
+
 		dbDelta( $sql );
 		self::migrate_to_network();
 		Network::update_option( 'sigil_db_version', SIGIL_VERSION );
