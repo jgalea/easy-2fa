@@ -73,24 +73,23 @@ trait Clears_Attempts {
 	}
 
 	/**
-	 * Drop the counter and say what happened, so a test that depends on it
-	 * being gone can fail on that rather than on what it was trying to prove.
+	 * Take the counter away for real.
+	 *
+	 * The suite rewrites CREATE TABLE into CREATE TEMPORARY TABLE and DROP into
+	 * DROP TEMPORARY, so a plain drop here removes a temporary table that may
+	 * never have existed and leaves the real one standing, which is the state
+	 * the code under test then happily writes to. Lifting the two filters for
+	 * the length of the call makes the drop mean what it says. The suite adds
+	 * them back for the next test.
 	 */
-	protected static function drop_table(): string {
+	protected function drop_table(): void {
 		global $wpdb;
 
-		$table = \Sigil\Rate_Limit::table();
+		remove_filter( 'query', array( $this, '_create_temporary_tables' ) );
+		remove_filter( 'query', array( $this, '_drop_temporary_tables' ) );
 
-		$prior   = $wpdb->suppress_errors( true );
-		$dropped = $wpdb->query( "DROP TABLE {$table}" );
-		$error   = $wpdb->last_error;
+		$prior = $wpdb->suppress_errors( true );
+		$wpdb->query( 'DROP TABLE IF EXISTS ' . \Sigil\Rate_Limit::table() );
 		$wpdb->suppress_errors( $prior );
-
-		return sprintf(
-			'drop returned %s, error "%s", SHOW TABLES now "%s"',
-			var_export( $dropped, true ),
-			$error,
-			self::found_table()
-		);
 	}
 }
