@@ -65,7 +65,13 @@ class Test_Pro_Features extends WP_UnitTestCase {
 		$this->assertTrue( \Sigil\Pro\Method_Policy::allowed_for( $user, 'email' ) );
 	}
 
-	public function test_the_registry_drops_a_disallowed_method(): void {
+	/**
+	 * The registry filter is presentational and admin-side only: it keeps a
+	 * method the account may not choose off the enrolment screen. It deliberately
+	 * does not run during authentication, because a rule applied there cannot
+	 * tell "not allowed" from "not set up" and skips the challenge entirely.
+	 */
+	public function test_the_enrolment_screen_hides_a_disallowed_method(): void {
 		\Sigil\Pro\Method_Policy::update(
 			array( 'subscriber' => array( 'email' => false, 'totp' => true, 'backup' => true, 'passkey' => true ) )
 		);
@@ -73,14 +79,21 @@ class Test_Pro_Features extends WP_UnitTestCase {
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'subscriber' ) ) );
 		\Sigil\Pro\Method_Policy::instance()->register();
 
-		$ids = array_map(
-			static function ( \Sigil\Provider $provider ): string {
-				return $provider->id();
-			},
-			\Sigil\Providers::instance()->all()
-		);
-		$this->assertNotContains( 'email', $ids );
-		$this->assertContains( 'totp', $ids );
+		$ids = static function (): array {
+			return array_map(
+				static function ( \Sigil\Provider $provider ): string {
+					return $provider->id();
+				},
+				\Sigil\Providers::instance()->all()
+			);
+		};
+
+		set_current_screen( 'users' );
+		$this->assertNotContains( 'email', $ids(), 'hidden while choosing a method' );
+		$this->assertContains( 'totp', $ids() );
+
+		set_current_screen( 'front' );
+		$this->assertContains( 'email', $ids(), 'untouched where someone is signing in' );
 	}
 
 	// A policy that allows nothing would leave an account unable to authenticate

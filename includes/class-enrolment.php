@@ -138,6 +138,25 @@ final class Enrolment {
 	 */
 	public function complete_method( int $user_id, string $provider_id, array $input ) {
 		/**
+		 * Filter whether a user may set up this method.
+		 *
+		 * The place to refuse a method is here, when someone is choosing it, not
+		 * at the login that follows. A rule applied at authentication cannot
+		 * tell "you may not use this" apart from "you have nothing", and the
+		 * second answer skips the challenge altogether.
+		 *
+		 * @param bool   $allowed
+		 * @param int    $user_id
+		 * @param string $provider_id
+		 */
+		if ( ! apply_filters( 'sigil_can_enrol', true, $user_id, $provider_id ) ) {
+			return new \WP_Error(
+				'sigil_method_not_allowed',
+				__( 'That authentication method is not available for this account.', 'sigil-2fa' )
+			);
+		}
+
+		/**
 		 * Fires before a user's methods are about to change, so a listener can
 		 * see what they were.
 		 *
