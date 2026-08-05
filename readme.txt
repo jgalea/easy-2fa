@@ -4,7 +4,7 @@ Tags: two-factor, 2fa, passkeys, authentication, security
 Requires at least: 6.9
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 0.3.2
+Stable tag: 0.3.3
 License: GPL-3.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -101,6 +101,12 @@ Yes. Put `[sigil_2fa]` on a page. Users manage their methods from there, and any
 Yes. Settings → Sigil lets you pick exactly which roles are required, and set a grace period so people are prompted to enrol rather than locked out immediately.
 
 == Changelog ==
+
+= 0.3.3 =
+* Everyone sharing one address, as an office, a school or a mobile network does, is no longer held to a single person's allowance of attempts. A few colleagues mistyping could stop everybody else signing in. Guessing any one account is bounded by the same five attempts as before.
+* A site behind a proxy can now tell the plugin the real visitor address with the sigil_client_ip filter, instead of counting every visitor as the proxy.
+* An account keeps only its newest few unspent verification sessions rather than an unlimited pile of them.
+* The allowed-methods screen now says when a role was left with every method because nothing was ticked for it, rather than appearing to have discarded the save.
 
 = 0.3.2 =
 * A percent sign in the challenge wording no longer breaks the login screen. The line naming the person signing in was formatted rather than substituted, so wording like "50% off" stopped anybody with a second factor from completing a sign-in.
